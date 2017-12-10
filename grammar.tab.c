@@ -73,13 +73,18 @@
 	#include <list>
 	#include "AsmInstruction.h"
 	#include <fstream>
+	#include<bitset>
 	extern "C" int yylex();
 	extern "C" int yyparse();
 	void yyerror (char const *);
 	extern int yylineno;
 	extern char* yytext;
 	int memory_pointer = 0;
-	int assignValueToIdentifier(std::string name);
+	int assignValueToIdentifier(std::string name, int value);
+	int constructValueToRegister(int value);
+	void undefinedVariableError(std::string varName);
+	int storeIdentifier(std::string name);
+	void numberTooBigError(std::string varName);
 	void printAsmInstructions();
 	int readToIdentifier(std::string name);
 	int initializeIdentifier(std::string name);
@@ -87,7 +92,7 @@
 	std::map<std::string, int> memoryMap;
 	std::list<AsmInstruction*> asmInstrunctions;
 
-#line 91 "grammar.tab.c" /* yacc.c:339  */
+#line 96 "grammar.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -166,12 +171,12 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 25 "grammar.y" /* yacc.c:355  */
+#line 30 "grammar.y" /* yacc.c:355  */
 
 	char* string;
 	int integer;
 
-#line 175 "grammar.tab.c" /* yacc.c:355  */
+#line 180 "grammar.tab.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -188,7 +193,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 192 "grammar.tab.c" /* yacc.c:358  */
+#line 197 "grammar.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -489,10 +494,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    73,    73,    76,    80,    81,    83,    84,    86,    87,
-      88,    89,    90,    91,    92,    96,    98,    99,   100,   101,
-     102,   103,   105,   106,   107,   108,   109,   110,   112,   113,
-     115,   116,   117
+       0,    78,    78,    81,    85,    86,    88,    89,    91,    95,
+      96,    97,    98,    99,   100,   105,   107,   108,   109,   110,
+     111,   112,   114,   115,   116,   117,   118,   119,   121,   122,
+     124,   125,   126
 };
 #endif
 
@@ -1332,38 +1337,48 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 73 "grammar.y" /* yacc.c:1646  */
+#line 78 "grammar.y" /* yacc.c:1646  */
     { printAsmInstructions();
 								}
-#line 1339 "grammar.tab.c" /* yacc.c:1646  */
+#line 1344 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 76 "grammar.y" /* yacc.c:1646  */
+#line 81 "grammar.y" /* yacc.c:1646  */
     {
 								if(initializeIdentifier((yyvsp[0].string)))
 										return 1;
 								}
-#line 1348 "grammar.tab.c" /* yacc.c:1646  */
+#line 1353 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 8:
+#line 91 "grammar.y" /* yacc.c:1646  */
+    {
+									if(assignValueToIdentifier((yyvsp[-3].string), (yyvsp[-1].int)))
+										return 1;
+								}
+#line 1362 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 92 "grammar.y" /* yacc.c:1646  */
-    { //wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
+#line 100 "grammar.y" /* yacc.c:1646  */
+    {
+							//wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
 								if(readToIdentifier((yyvsp[-1].string)))
 									return 1;
 							}
-#line 1357 "grammar.tab.c" /* yacc.c:1646  */
+#line 1372 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 113 "grammar.y" /* yacc.c:1646  */
+#line 122 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1363 "grammar.tab.c" /* yacc.c:1646  */
+#line 1378 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1367 "grammar.tab.c" /* yacc.c:1646  */
+#line 1382 "grammar.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1591,12 +1606,47 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 118 "grammar.y" /* yacc.c:1906  */
+#line 127 "grammar.y" /* yacc.c:1906  */
 
 
 /********************************METHODS***********************************/
 
 using namespace std;
+
+int assignValueToIdentifier(string name, int value)
+{
+	if(constructValueToRegister(value))
+	{
+		numberTooBigError(name);
+		return 1;
+	}
+	else
+	{
+		return storeIdentifier(name);
+	}
+}
+
+int constructValueToRegister(int value)
+{
+	string valueBin;
+	if(value < 128)
+		valueBin = bitset<8>(value).to_string();
+	else if(value < 65536)
+		valueBin = bitset<16>(value).to_string();
+	else if(value < 2147483648)
+		valueBin = bitset<32>(value).to_string();
+	else
+		return 1;
+	for(int i=valueBin.length()-1; i>=0; i--)
+	{
+		if(valueBin[i] == 0)
+			asmInstrunctions.push_back(new AsmInstruction("SHL"));
+		else
+			asmInstrunctions.push_back(new AsmInstruction("INC"));
+	}
+	return 0;
+}
+
 int initializeIdentifier(string name)
 {
 	if(memoryMap.find(name) == memoryMap.end())
@@ -1619,19 +1669,15 @@ int readToIdentifier(string name)
 {
 	AsmInstruction* a = new AsmInstruction("GET");
 	asmInstrunctions.push_back(a);
-	return assignValueToIdentifier(name);
+	return storeIdentifier(name);
 }
 
-int assignValueToIdentifier(string name)
+int storeIdentifier(string name)
 {
 	map<string, int>::iterator it = memoryMap.find(name);
 	if(memoryMap.find(name) == memoryMap.end())
 	{
-		char* error =(char*) malloc(100);
-		error = strcpy(error, "Variable '");
-		error = strcat(error,name.c_str());
-		error = strcat(error,"' undeclared.");
-		yyerror(error);
+		undefinedVariableError(name);
 		return 1;
 	}
 	else
@@ -1646,12 +1692,34 @@ int assignValueToIdentifier(string name)
 void printAsmInstructions()
 {
 	ofstream outputFile;
-	outputFile.open("output.txt");
+	outputFile.open("output.mr");
 	list<AsmInstruction*>::iterator it;
 	for (auto const& i : asmInstrunctions) {
     outputFile << i->toString() << endl;
 	}
 	outputFile.close();
+}
+
+/*******************ERROR HANDLING*********************************/
+
+void undefinedVariableError(string varName)
+{
+	char* error =(char*) malloc(100);
+	error = strcpy(error, "Variable '");
+	error = strcat(error,varName.c_str());
+	error = strcat(error,"' undeclared.");
+	yyerror(error);
+	free(error);
+}
+
+void numberTooBigError(string varName)
+{
+	char* error =(char*) malloc(100);
+	error = strcpy(error, "Cannot assign value to variable '");
+	error = strcat(error,varName.c_str());
+	error = strcat(error,"' - value too big.");
+	yyerror(error);
+	free(error);
 }
 
 void yyerror (char const *s)

@@ -7,14 +7,20 @@
 	#include <map>
 	#include <list>
 	#include "AsmInstruction.h"
+	#include "Identifier.h"
 	#include <fstream>
+	#include<bitset>
 	extern "C" int yylex();
 	extern "C" int yyparse();
 	void yyerror (char const *);
 	extern int yylineno;
 	extern char* yytext;
 	int memory_pointer = 0;
-	int assignValueToIdentifier(std::string name);
+	int assignValueToIdentifier(std::string name, int value);
+	int constructValueToRegister(int value);
+	void undefinedVariableError(std::string varName);
+	int storeIdentifier(std::string name);
+	void numberTooBigError(std::string varName);
 	void printAsmInstructions();
 	int readToIdentifier(std::string name);
 	int initializeIdentifier(std::string name);
@@ -25,10 +31,11 @@
 %union {
 	char* string;
 	int integer;
+	Identifier* identifier;
 };
 
-//%type <string> command
-%type<string> identifier
+//%type <int> value
+%type<identifier> identifier
 
 %token <string> num
 %token <string> PID "identifier"
@@ -83,7 +90,10 @@ vdeclarations	: vdeclarations PID {
 commands			:	commands command
         			| command
 
-command	      : identifier T_ASG expression T_EL
+command	      : identifier T_ASG expression T_EL {
+									if(assignValueToIdentifier($1, $3))
+										return 1;
+								}
              	| IF condition THEN commands ELSE commands ENDIF
              	| IF condition THEN commands ENDIF
              	| WHILE condition DO commands ENDWHILE
@@ -113,14 +123,49 @@ condition			: value T_EQ value
 value:					num
              	| identifier {}
 
-identifier:   	PID //wyciagnij z mapy numer w pamieci pod ktorym jest identifier i wypluj
-             	| PID T_LBR PID T_RBR
-             	| PID  T_LBR num T_RBR
+identifier:   	PID {$$ = new Identifier($1); free($1);}
+             	| PID T_LBR PID T_RBR  {}
+             	| PID  T_LBR num T_RBR  {}
 %%
 
 /********************************METHODS***********************************/
 
 using namespace std;
+
+int assignValueToIdentifier(string name, int value)
+{
+	if(constructValueToRegister(value))
+	{
+		numberTooBigError(name);
+		return 1;
+	}
+	else
+	{
+		return storeIdentifier(name);
+	}
+}
+
+int constructValueToRegister(int value)
+{
+	string valueBin;
+	if(value < 128)
+		valueBin = bitset<8>(value).to_string();
+	else if(value < 65536)
+		valueBin = bitset<16>(value).to_string();
+	else if(value < 2147483648)
+		valueBin = bitset<32>(value).to_string();
+	else
+		return 1;
+	for(int i=valueBin.length()-1; i>=0; i--)
+	{
+		if(valueBin[i] == 0)
+			asmInstrunctions.push_back(new AsmInstruction("SHL"));
+		else
+			asmInstrunctions.push_back(new AsmInstruction("INC"));
+	}
+	return 0;
+}
+
 int initializeIdentifier(string name)
 {
 	if(memoryMap.find(name) == memoryMap.end())
@@ -143,19 +188,15 @@ int readToIdentifier(string name)
 {
 	AsmInstruction* a = new AsmInstruction("GET");
 	asmInstrunctions.push_back(a);
-	return assignValueToIdentifier(name);
+	return storeIdentifier(name);
 }
 
-int assignValueToIdentifier(string name)
+int storeIdentifier(string name)
 {
 	map<string, int>::iterator it = memoryMap.find(name);
 	if(memoryMap.find(name) == memoryMap.end())
 	{
-		char* error =(char*) malloc(100);
-		error = strcpy(error, "Variable '");
-		error = strcat(error,name.c_str());
-		error = strcat(error,"' undeclared.");
-		yyerror(error);
+		undefinedVariableError(name);
 		return 1;
 	}
 	else
@@ -176,6 +217,28 @@ void printAsmInstructions()
     outputFile << i->toString() << endl;
 	}
 	outputFile.close();
+}
+
+/*******************ERROR HANDLING*********************************/
+
+void undefinedVariableError(string varName)
+{
+	char* error =(char*) malloc(100);
+	error = strcpy(error, "Variable '");
+	error = strcat(error,varName.c_str());
+	error = strcat(error,"' undeclared.");
+	yyerror(error);
+	free(error);
+}
+
+void numberTooBigError(string varName)
+{
+	char* error =(char*) malloc(100);
+	error = strcpy(error, "Cannot assign value to variable '");
+	error = strcat(error,varName.c_str());
+	error = strcat(error,"' - value too big.");
+	yyerror(error);
+	free(error);
 }
 
 void yyerror (char const *s)
