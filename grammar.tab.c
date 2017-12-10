@@ -72,6 +72,7 @@
 	#include <map>
 	#include <list>
 	#include "AsmInstruction.h"
+	#include "Identifier.h"
 	#include <fstream>
 	#include<bitset>
 	extern "C" int yylex();
@@ -92,7 +93,7 @@
 	std::map<std::string, int> memoryMap;
 	std::list<AsmInstruction*> asmInstrunctions;
 
-#line 96 "grammar.tab.c" /* yacc.c:339  */
+#line 97 "grammar.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -171,12 +172,13 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 30 "grammar.y" /* yacc.c:355  */
+#line 31 "grammar.y" /* yacc.c:355  */
 
 	char* string;
 	int integer;
+	//Identifier* identifier;
 
-#line 180 "grammar.tab.c" /* yacc.c:355  */
+#line 182 "grammar.tab.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -193,7 +195,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 197 "grammar.tab.c" /* yacc.c:358  */
+#line 199 "grammar.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -494,10 +496,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    78,    78,    81,    85,    86,    88,    89,    91,    95,
-      96,    97,    98,    99,   100,   105,   107,   108,   109,   110,
-     111,   112,   114,   115,   116,   117,   118,   119,   121,   122,
-     124,   125,   126
+       0,    81,    81,    84,    88,    89,    91,    92,    94,    98,
+      99,   100,   101,   102,   103,   108,   110,   111,   112,   113,
+     114,   115,   117,   118,   119,   120,   121,   122,   124,   127,
+     129,   130,   131
 };
 #endif
 
@@ -1337,48 +1339,110 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 78 "grammar.y" /* yacc.c:1646  */
+#line 81 "grammar.y" /* yacc.c:1646  */
     { printAsmInstructions();
 								}
-#line 1344 "grammar.tab.c" /* yacc.c:1646  */
+#line 1346 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 81 "grammar.y" /* yacc.c:1646  */
+#line 84 "grammar.y" /* yacc.c:1646  */
     {
 								if(initializeIdentifier((yyvsp[0].string)))
 										return 1;
 								}
-#line 1353 "grammar.tab.c" /* yacc.c:1646  */
+#line 1355 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 91 "grammar.y" /* yacc.c:1646  */
+#line 94 "grammar.y" /* yacc.c:1646  */
     {
-									if(assignValueToIdentifier((yyvsp[-3].string), (yyvsp[-1].int)))
-										return 1;
+									if(assignValueToIdentifier((yyvsp[-3].string), (yyvsp[-1].integer)));
+										//return 1;
 								}
-#line 1362 "grammar.tab.c" /* yacc.c:1646  */
+#line 1364 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 100 "grammar.y" /* yacc.c:1646  */
+#line 103 "grammar.y" /* yacc.c:1646  */
     {
 							//wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
 								if(readToIdentifier((yyvsp[-1].string)))
 									return 1;
 							}
-#line 1372 "grammar.tab.c" /* yacc.c:1646  */
+#line 1374 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 16:
+#line 110 "grammar.y" /* yacc.c:1646  */
+    {(yyval.integer) = (yyvsp[0].integer);}
+#line 1380 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 17:
+#line 111 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1386 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 18:
+#line 112 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1392 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 19:
+#line 113 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1398 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 20:
+#line 114 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1404 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 21:
+#line 115 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1410 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 28:
+#line 124 "grammar.y" /* yacc.c:1646  */
+    { (yyval.integer) = (yyvsp[0].integer);
+									//printf("debug value>num :%d\n", $1);
+								}
+#line 1418 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 122 "grammar.y" /* yacc.c:1646  */
+#line 127 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1378 "grammar.tab.c" /* yacc.c:1646  */
+#line 1424 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 30:
+#line 129 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1430 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 31:
+#line 130 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1436 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 32:
+#line 131 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1442 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1382 "grammar.tab.c" /* yacc.c:1646  */
+#line 1446 "grammar.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1606,7 +1670,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 127 "grammar.y" /* yacc.c:1906  */
+#line 132 "grammar.y" /* yacc.c:1906  */
 
 
 /********************************METHODS***********************************/
@@ -1637,9 +1701,11 @@ int constructValueToRegister(int value)
 		valueBin = bitset<32>(value).to_string();
 	else
 		return 1;
+	asmInstrunctions.push_back(new AsmInstruction("ZERO"));
+	//printf("DEBUG: %d is binary: %s\n",value, valueBin.c_str());
 	for(int i=valueBin.length()-1; i>=0; i--)
 	{
-		if(valueBin[i] == 0)
+		if(valueBin[i] == '0')
 			asmInstrunctions.push_back(new AsmInstruction("SHL"));
 		else
 			asmInstrunctions.push_back(new AsmInstruction("INC"));

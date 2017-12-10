@@ -87,6 +87,7 @@ return T_RBR;}
 yylval.string = strdup(yytext);
 return PID;}
 {VALUE} {//printf("value ");
+yylval.integer = atoi(yytext);
 return num;}
 [_a-z0-9]+						{
 return ERR;}

@@ -31,13 +31,14 @@
 %union {
 	char* string;
 	int integer;
-	Identifier* identifier;
+	//Identifier* identifier;
 };
 
-//%type <int> value
-%type<identifier> identifier
+%type <integer> value
+%type <integer> expression
+%type<string> identifier
 
-%token <string> num
+%token <integer> num
 %token <string> PID "identifier"
 
 
@@ -91,8 +92,8 @@ commands			:	commands command
         			| command
 
 command	      : identifier T_ASG expression T_EL {
-									if(assignValueToIdentifier($1, $3))
-										return 1;
+									if(assignValueToIdentifier($1, $3));
+										//return 1;
 								}
              	| IF condition THEN commands ELSE commands ENDIF
              	| IF condition THEN commands ENDIF
@@ -106,12 +107,12 @@ command	      : identifier T_ASG expression T_EL {
 							}
              	| WRITE value T_EL
 
-expression		:	value
-             	| value T_ADD value
-             	| value T_MIN value
-             	| value T_MUL value
-             	| value T_DIV value
-             	| value T_MOD value
+expression		:	value {$$ = $1;}
+             	| value T_ADD value {}
+             	| value T_MIN value {}
+             	| value T_MUL value {}
+             	| value T_DIV value {}
+             	| value T_MOD value {}
 
 condition			: value T_EQ value
              	| value T_NEQ value
@@ -120,10 +121,12 @@ condition			: value T_EQ value
              	| value T_RGE value
              	| value T_LGE value
 
-value:					num
+value					:	num { $$ = $1;
+									//printf("debug value>num :%d\n", $1);
+								}
              	| identifier {}
 
-identifier:   	PID {$$ = new Identifier($1); free($1);}
+identifier:   	PID {}
              	| PID T_LBR PID T_RBR  {}
              	| PID  T_LBR num T_RBR  {}
 %%
@@ -156,9 +159,11 @@ int constructValueToRegister(int value)
 		valueBin = bitset<32>(value).to_string();
 	else
 		return 1;
+	asmInstrunctions.push_back(new AsmInstruction("ZERO"));
+	//printf("DEBUG: %d is binary: %s\n",value, valueBin.c_str());
 	for(int i=valueBin.length()-1; i>=0; i--)
 	{
-		if(valueBin[i] == 0)
+		if(valueBin[i] == '0')
 			asmInstrunctions.push_back(new AsmInstruction("SHL"));
 		else
 			asmInstrunctions.push_back(new AsmInstruction("INC"));
