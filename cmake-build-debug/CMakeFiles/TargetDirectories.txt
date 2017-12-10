@@ -1,0 +1,3 @@
+/home/przemek/jftt2018_compiler/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/przemek/jftt2018_compiler/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/przemek/jftt2018_compiler/cmake-build-debug/CMakeFiles/jftt2018_compiler.dir
