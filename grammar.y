@@ -9,13 +9,16 @@
 	#include "AsmInstruction.h"
 	#include "Identifier.h"
 	#include <fstream>
-	#include<bitset>
+	#include <bitset>
+	#include <regex>
 	extern "C" int yylex();
 	extern "C" int yyparse();
 	void yyerror (char const *);
 	extern int yylineno;
 	extern char* yytext;
 	int memory_pointer = 0;
+	int valueTakenFromIdentifier = 0;
+	int copyValueFromAnotherIdentifier(std::string from, std::string to);
 	int assignValueToIdentifier(std::string name, int value);
 	int constructValueToRegister(int value);
 	void undefinedVariableError(std::string varName);
@@ -26,6 +29,7 @@
 	int initializeIdentifier(std::string name);
 	void printAsmInstructions();
 	std::map<std::string, int> memoryMap;
+	std::list<int> assignmentMemoryList;
 	std::list<AsmInstruction*> asmInstrunctions;
 %}
 %union {
@@ -34,11 +38,11 @@
 	//Identifier* identifier;
 };
 
-%type <integer> value
-%type <integer> expression
+%type <string> value
+%type <string> expression
 %type<string> identifier
 
-%token <integer> num
+%token <string> num
 %token <string> PID "identifier"
 
 
@@ -92,8 +96,16 @@ commands			:	commands command
         			| command
 
 command	      : identifier T_ASG expression T_EL {
-									if(assignValueToIdentifier($1, $3));
-										//return 1;
+									if(std::regex_match($3, std::regex("[0-9]+")))
+									{
+										if(assignValueToIdentifier($1, atoi($3)))
+											return 1;
+									}
+									else
+									{
+										if(copyValueFromAnotherIdentifier($3, $1))
+											return 1;
+									}
 								}
              	| IF condition THEN commands ELSE commands ENDIF
              	| IF condition THEN commands ENDIF
@@ -135,6 +147,44 @@ identifier:   	PID {}
 
 using namespace std;
 
+string decToBin(int number)
+{
+    string result = "";
+    do
+    {
+        if ( (number & 1) == 0 )
+            result += "0";
+        else
+            result += "1";
+
+        number >>= 1;
+    } while ( number );
+
+    reverse(result.begin(), result.end());
+    return result;
+}
+int copyValueFromAnotherIdentifier(std::string from, std::string to)
+{
+	map<string, int>::iterator itFrom = memoryMap.find(from);
+	map<string, int>::iterator itTo = memoryMap.find(to);
+	if(itFrom == memoryMap.end())
+	{
+		undefinedVariableError(from);
+		return 1;
+	}
+	else if (itTo == memoryMap.end())
+	{
+		undefinedVariableError(to);
+		return 1;
+	}
+	else
+	{
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", itFrom->second));
+		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second));
+	}
+	return 0;
+}
+
 int assignValueToIdentifier(string name, int value)
 {
 	if(constructValueToRegister(value))
@@ -150,22 +200,14 @@ int assignValueToIdentifier(string name, int value)
 
 int constructValueToRegister(int value)
 {
-	string valueBin;
-	if(value < 128)
-		valueBin = bitset<8>(value).to_string();
-	else if(value < 65536)
-		valueBin = bitset<16>(value).to_string();
-	else if(value < 2147483648)
-		valueBin = bitset<32>(value).to_string();
-	else
-		return 1;
+	string valueBin = decToBin(value);
 	asmInstrunctions.push_back(new AsmInstruction("ZERO"));
-	//printf("DEBUG: %d is binary: %s\n",value, valueBin.c_str());
-	for(int i=valueBin.length()-1; i>=0; i--)
+	printf("DEBUG: %d is binary: %s\n",value, valueBin.c_str());
+	for(int i=0; i<valueBin.length(); i++)
 	{
-		if(valueBin[i] == '0')
+		if(valueBin[i] == '0' && i!=0)
 			asmInstrunctions.push_back(new AsmInstruction("SHL"));
-		else
+		else if(valueBin[i] == '1')
 			asmInstrunctions.push_back(new AsmInstruction("INC"));
 	}
 	return 0;

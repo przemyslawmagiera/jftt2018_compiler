@@ -1060,7 +1060,7 @@ case 37:
 YY_RULE_SETUP
 #line 89 "lexer.l"
 {//printf("value ");
-yylval.integer = atoi(yytext);
+yylval.string = strdup(yytext);
 return num;}
 	YY_BREAK
 case 38:
@@ -2195,7 +2195,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 31 "grammar.y" /* yacc.c:1909  */
+#line 35 "grammar.y" /* yacc.c:1909  */
 
 	char* string;
 	int integer;
