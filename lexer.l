@@ -83,9 +83,10 @@ return T_EL;}
 return T_LBR;}
 "]" { //printf("T_RBR ");
 return T_RBR;}
-{VARIABLE} {printf("var ");
-return pidentifier;}
-{VALUE} {printf("value ");
+{VARIABLE} {//printf("var ");
+yylval.string = strdup(yytext);
+return PID;}
+{VALUE} {//printf("value ");
 return num;}
 [_a-z0-9]+						{
 return ERR;}

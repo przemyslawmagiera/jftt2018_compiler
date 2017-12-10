@@ -1,5 +1,5 @@
 VAR
-    a1 b
+    a b a
 BEGIN
     READ a;
     WHILE a > 0 DO

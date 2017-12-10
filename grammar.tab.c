@@ -66,16 +66,20 @@
 
 	#include <stdio.h>
 	#include <string>
+	#include <string.h>
 	#include <cstdlib>
+	#include <iostream>
+	#include <map>
 	extern "C" int yylex();
 	extern "C" int yyparse();
 	void yyerror (char const *);
 	extern int yylineno;
 	extern char* yytext;
-	int memory_ponter = 0;
-	void initializeVariable(std::string name);
+	int memory_pointer = 0;
+	int initializeIdentifier(std::string name);
+	std::map<std::string, int> memoryMap;
 
-#line 79 "grammar.tab.c" /* yacc.c:339  */
+#line 83 "grammar.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -111,7 +115,7 @@ extern int yydebug;
   enum yytokentype
   {
     num = 258,
-    pidentifier = 259,
+    PID = 259,
     VAR = 260,
     T_BEGIN = 261,
     END = 262,
@@ -151,7 +155,17 @@ extern int yydebug;
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+
+union YYSTYPE
+{
+#line 18 "grammar.y" /* yacc.c:355  */
+
+	char* string;
+
+#line 166 "grammar.tab.c" /* yacc.c:355  */
+};
+
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
@@ -165,7 +179,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 169 "grammar.tab.c" /* yacc.c:358  */
+#line 183 "grammar.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -466,10 +480,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    54,    54,    56,    57,    58,    60,    61,    63,    64,
-      65,    66,    67,    68,    69,    70,    72,    73,    74,    75,
-      76,    77,    79,    80,    81,    82,    83,    84,    86,    87,
-      89,    90,    91
+       0,    61,    61,    63,    64,    65,    67,    68,    70,    71,
+      72,    73,    74,    75,    76,    77,    79,    80,    81,    82,
+      83,    84,    86,    87,    88,    89,    90,    91,    93,    94,
+      96,   100,   101
 };
 #endif
 
@@ -478,14 +492,14 @@ static const yytype_uint8 yyrline[] =
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "$end", "error", "$undefined", "num", "pidentifier", "VAR", "T_BEGIN",
-  "END", "IF", "ELSE", "ENDIF", "THEN", "WHILE", "DO", "ENDWHILE", "FOR",
-  "FROM", "TO", "ENDFOR", "DOWNTO", "READ", "WRITE", "SKIP", "T_ADD",
-  "'+'", "T_MIN", "'-'", "T_MUL", "'*'", "T_DIV", "'/'", "T_MOD", "'%'",
-  "T_EQ", "'='", "\"<>\"", "T_RGT", "'<'", "\"<=\"", "\">=\"", "T_LGT",
-  "'>'", "\":=\"", "T_EL", "';'", "T_LBR", "'['", "T_RBR", "']'", "ERR",
-  "$accept", "program", "vdeclarations", "commands", "command",
-  "expression", "condition", "value", "identifier", YY_NULLPTR
+  "$end", "error", "$undefined", "num", "\"pidentifier\"", "VAR",
+  "T_BEGIN", "END", "IF", "ELSE", "ENDIF", "THEN", "WHILE", "DO",
+  "ENDWHILE", "FOR", "FROM", "TO", "ENDFOR", "DOWNTO", "READ", "WRITE",
+  "SKIP", "T_ADD", "'+'", "T_MIN", "'-'", "T_MUL", "'*'", "T_DIV", "'/'",
+  "T_MOD", "'%'", "T_EQ", "'='", "\"<>\"", "T_RGT", "'<'", "\"<=\"",
+  "\">=\"", "T_LGT", "'>'", "\":=\"", "T_EL", "';'", "T_LBR", "'['",
+  "T_RBR", "']'", "ERR", "$accept", "program", "vdeclarations", "commands",
+  "command", "expression", "condition", "value", "identifier", YY_NULLPTR
 };
 #endif
 
@@ -1308,14 +1322,23 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-        case 30:
-#line 89 "grammar.y" /* yacc.c:1646  */
-    { initializeVariable(yytext); }
-#line 1315 "grammar.tab.c" /* yacc.c:1646  */
+        case 29:
+#line 94 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1329 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 30:
+#line 96 "grammar.y" /* yacc.c:1646  */
+    {
+									if(initializeIdentifier((yyvsp[0].string)))
+										return 1;
+									}
+#line 1338 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1319 "grammar.tab.c" /* yacc.c:1646  */
+#line 1342 "grammar.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1543,17 +1566,31 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 92 "grammar.y" /* yacc.c:1906  */
+#line 102 "grammar.y" /* yacc.c:1906  */
 
 
-void initializeVariable(std::string name)
+int initializeIdentifier(std::string name)
 {
+	if(memoryMap.find(name) == memoryMap.end())
+	{
+		memoryMap[name] = memory_pointer;
+		memory_pointer++;
+		return 0;
+	}
+	else
+	{
+		char* error =(char*) malloc(100);
+		error = strcpy(error, "Duplicate identifier: ");
+		error = strcat(error,name.c_str());
+		yyerror(error);
+		return 1;
+	}
 
 }
 
 void yyerror (char const *s)
 {
-	printf("Error at line:%d in expression '%s'\n", yylineno, yytext);
+	printf("Error at line:%d in expression '%s', detail : %s \n", yylineno, yytext, s);
 }
 
 int main (void)

@@ -1052,32 +1052,33 @@ return T_RBR;}
 case 36:
 YY_RULE_SETUP
 #line 86 "lexer.l"
-{printf("var ");
-return pidentifier;}
+{//printf("var ");
+yylval.string = strdup(yytext);
+return PID;}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 88 "lexer.l"
-{printf("value ");
+#line 89 "lexer.l"
+{//printf("value ");
 return num;}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 90 "lexer.l"
+#line 91 "lexer.l"
 {
 return ERR;}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 92 "lexer.l"
+#line 93 "lexer.l"
 {return ERR; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 93 "lexer.l"
+#line 94 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 1081 "lex.yy.c"
+#line 1082 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2090,7 +2091,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 93 "lexer.l"
+#line 94 "lexer.l"
 
 
 /*
@@ -2150,7 +2151,7 @@ extern int yydebug;
   enum yytokentype
   {
     num = 258,
-    pidentifier = 259,
+    PID = 259,
     VAR = 260,
     T_BEGIN = 261,
     END = 262,
@@ -2190,7 +2191,17 @@ extern int yydebug;
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+
+union YYSTYPE
+{
+#line 18 "grammar.y" /* yacc.c:1909  */
+
+	char* string;
+
+#line 97 "grammar.tab.h" /* yacc.c:1909  */
+};
+
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif

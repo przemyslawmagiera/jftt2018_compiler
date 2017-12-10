@@ -1,19 +1,26 @@
 %{
 	#include <stdio.h>
 	#include <string>
+	#include <string.h>
 	#include <cstdlib>
+	#include <iostream>
+	#include <map>
 	extern "C" int yylex();
 	extern "C" int yyparse();
 	void yyerror (char const *);
 	extern int yylineno;
 	extern char* yytext;
-	int memory_ponter = 0;
-	void initializeVariable(std::string name);
+	int memory_pointer = 0;
+	int initializeIdentifier(std::string name);
+	std::map<std::string, int> memoryMap;
 %}
-%define api.value.type {int}
 
-%token <std::string> num
-%token <std::string> pidentifier
+%union {
+	char* string;
+};
+
+%token <string> num
+%token <string> PID "pidentifier"
 
 %token 				VAR
 %token				T_BEGIN
@@ -53,8 +60,8 @@
 %%
 program				:	VAR vdeclarations T_BEGIN commands END
 
-vdeclarations	: vdeclarations pidentifier
-              | vdeclarations pidentifier T_LBR num T_RBR
+vdeclarations	: vdeclarations PID
+              | vdeclarations PID  T_LBR num T_RBR
              	|
 
 commands			:	commands command
@@ -64,8 +71,8 @@ command	      : identifier T_ASG expression T_EL
              	| IF condition THEN commands ELSE commands ENDIF
              	| IF condition THEN commands ENDIF
              	| WHILE condition DO commands ENDWHILE
-             	| FOR pidentifier FROM value TO value DO commands ENDFOR
-             	| FOR pidentifier FROM value DOWNTO value DO commands ENDFOR
+             	| FOR PID FROM value TO value DO commands ENDFOR
+             	| FOR PID FROM value DOWNTO value DO commands ENDFOR
              	| READ identifier T_EL
              	| WRITE value T_EL
 
@@ -84,21 +91,38 @@ condition			: value T_EQ value
              	| value T_LGE value
 
 value:					num
-             	| identifier
+             	| identifier {}
 
-identifier:   	pidentifier	{ initializeVariable(yytext); }
-             	| pidentifier T_LBR pidentifier T_RBR
-             	| pidentifier T_LBR num T_RBR
+identifier:   	PID	{
+									if(initializeIdentifier($1))
+										return 1;
+									}
+             	| PID T_LBR PID T_RBR
+             	| PID  T_LBR num T_RBR
 %%
 
-void initializeVariable(std::string name)
+int initializeIdentifier(std::string name)
 {
+	if(memoryMap.find(name) == memoryMap.end())
+	{
+		memoryMap[name] = memory_pointer;
+		memory_pointer++;
+		return 0;
+	}
+	else
+	{
+		char* error =(char*) malloc(100);
+		error = strcpy(error, "Duplicate identifier: ");
+		error = strcat(error,name.c_str());
+		yyerror(error);
+		return 1;
+	}
 
 }
 
 void yyerror (char const *s)
 {
-	printf("Error at line:%d in expression '%s'\n", yylineno, yytext);
+	printf("Error at line:%d in expression '%s', detail : %s \n", yylineno, yytext, s);
 }
 
 int main (void)
