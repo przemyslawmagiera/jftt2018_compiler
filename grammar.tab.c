@@ -480,10 +480,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    61,    61,    63,    64,    65,    67,    68,    70,    71,
-      72,    73,    74,    75,    76,    77,    79,    80,    81,    82,
-      83,    84,    86,    87,    88,    89,    90,    91,    93,    94,
-      96,   100,   101
+       0,    62,    62,    64,    68,    69,    71,    72,    74,    75,
+      76,    77,    78,    79,    80,    81,    83,    84,    85,    86,
+      87,    88,    90,    91,    92,    93,    94,    95,    97,    98,
+     100,   101,   102
 };
 #endif
 
@@ -1322,18 +1322,18 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-        case 29:
-#line 94 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1329 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 30:
-#line 96 "grammar.y" /* yacc.c:1646  */
+        case 3:
+#line 64 "grammar.y" /* yacc.c:1646  */
     {
 									if(initializeIdentifier((yyvsp[0].string)))
 										return 1;
 									}
+#line 1332 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 29:
+#line 98 "grammar.y" /* yacc.c:1646  */
+    {}
 #line 1338 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
@@ -1566,7 +1566,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 102 "grammar.y" /* yacc.c:1906  */
+#line 103 "grammar.y" /* yacc.c:1906  */
 
 
 int initializeIdentifier(std::string name)

@@ -22,6 +22,7 @@
 %token <string> num
 %token <string> PID "pidentifier"
 
+
 %token 				VAR
 %token				T_BEGIN
 %token				END
@@ -60,7 +61,10 @@
 %%
 program				:	VAR vdeclarations T_BEGIN commands END
 
-vdeclarations	: vdeclarations PID
+vdeclarations	: vdeclarations PID {
+									if(initializeIdentifier($2))
+										return 1;
+									}
               | vdeclarations PID  T_LBR num T_RBR
              	|
 
@@ -73,7 +77,8 @@ command	      : identifier T_ASG expression T_EL
              	| WHILE condition DO commands ENDWHILE
              	| FOR PID FROM value TO value DO commands ENDFOR
              	| FOR PID FROM value DOWNTO value DO commands ENDFOR
-             	| READ identifier T_EL
+             	| READ identifier T_EL { //zapisz ze pod komorka pamieci memoryMap.find(identifier)
+							}
              	| WRITE value T_EL
 
 expression		:	value
@@ -93,10 +98,7 @@ condition			: value T_EQ value
 value:					num
              	| identifier {}
 
-identifier:   	PID	{
-									if(initializeIdentifier($1))
-										return 1;
-									}
+identifier:   	PID
              	| PID T_LBR PID T_RBR
              	| PID  T_LBR num T_RBR
 %%

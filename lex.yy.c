@@ -1052,7 +1052,7 @@ return T_RBR;}
 case 36:
 YY_RULE_SETUP
 #line 86 "lexer.l"
-{//printf("var ");
+{printf("var ");
 yylval.string = strdup(yytext);
 return PID;}
 	YY_BREAK
