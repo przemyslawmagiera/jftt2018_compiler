@@ -1,3 +1,0 @@
-var var var var Error at line:2 in expression 'a', detail : Duplicate identifier: a 
-
-Process returned 1, error.

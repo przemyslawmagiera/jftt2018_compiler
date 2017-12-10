@@ -1052,7 +1052,7 @@ return T_RBR;}
 case 36:
 YY_RULE_SETUP
 #line 86 "lexer.l"
-{printf("var ");
+{//printf("var ");
 yylval.string = strdup(yytext);
 return PID;}
 	YY_BREAK
@@ -2194,11 +2194,12 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 18 "grammar.y" /* yacc.c:1909  */
+#line 25 "grammar.y" /* yacc.c:1909  */
 
 	char* string;
+	int integer;
 
-#line 97 "grammar.tab.h" /* yacc.c:1909  */
+#line 98 "grammar.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

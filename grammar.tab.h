@@ -89,11 +89,12 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 18 "grammar.y" /* yacc.c:1909  */
+#line 25 "grammar.y" /* yacc.c:1909  */
 
 	char* string;
+	int integer;
 
-#line 97 "grammar.tab.h" /* yacc.c:1909  */
+#line 98 "grammar.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

@@ -70,16 +70,24 @@
 	#include <cstdlib>
 	#include <iostream>
 	#include <map>
+	#include <list>
+	#include "AsmInstruction.h"
+	#include <fstream>
 	extern "C" int yylex();
 	extern "C" int yyparse();
 	void yyerror (char const *);
 	extern int yylineno;
 	extern char* yytext;
 	int memory_pointer = 0;
+	int assignValueToIdentifier(std::string name);
+	void printAsmInstructions();
+	int readToIdentifier(std::string name);
 	int initializeIdentifier(std::string name);
+	void printAsmInstructions();
 	std::map<std::string, int> memoryMap;
+	std::list<AsmInstruction*> asmInstrunctions;
 
-#line 83 "grammar.tab.c" /* yacc.c:339  */
+#line 91 "grammar.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -158,11 +166,12 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 18 "grammar.y" /* yacc.c:355  */
+#line 25 "grammar.y" /* yacc.c:355  */
 
 	char* string;
+	int integer;
 
-#line 166 "grammar.tab.c" /* yacc.c:355  */
+#line 175 "grammar.tab.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -179,7 +188,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 183 "grammar.tab.c" /* yacc.c:358  */
+#line 192 "grammar.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -480,10 +489,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    62,    62,    64,    68,    69,    71,    72,    74,    75,
-      76,    77,    78,    79,    80,    81,    83,    84,    85,    86,
-      87,    88,    90,    91,    92,    93,    94,    95,    97,    98,
-     100,   101,   102
+       0,    73,    73,    76,    80,    81,    83,    84,    86,    87,
+      88,    89,    90,    91,    92,    96,    98,    99,   100,   101,
+     102,   103,   105,   106,   107,   108,   109,   110,   112,   113,
+     115,   116,   117
 };
 #endif
 
@@ -492,7 +501,7 @@ static const yytype_uint8 yyrline[] =
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "$end", "error", "$undefined", "num", "\"pidentifier\"", "VAR",
+  "$end", "error", "$undefined", "num", "\"identifier\"", "VAR",
   "T_BEGIN", "END", "IF", "ELSE", "ENDIF", "THEN", "WHILE", "DO",
   "ENDWHILE", "FOR", "FROM", "TO", "ENDFOR", "DOWNTO", "READ", "WRITE",
   "SKIP", "T_ADD", "'+'", "T_MIN", "'-'", "T_MUL", "'*'", "T_DIV", "'/'",
@@ -1322,23 +1331,39 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-        case 3:
-#line 64 "grammar.y" /* yacc.c:1646  */
+        case 2:
+#line 73 "grammar.y" /* yacc.c:1646  */
+    { printAsmInstructions();
+								}
+#line 1339 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 3:
+#line 76 "grammar.y" /* yacc.c:1646  */
     {
-									if(initializeIdentifier((yyvsp[0].string)))
+								if(initializeIdentifier((yyvsp[0].string)))
 										return 1;
-									}
-#line 1332 "grammar.tab.c" /* yacc.c:1646  */
+								}
+#line 1348 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 14:
+#line 92 "grammar.y" /* yacc.c:1646  */
+    { //wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
+								if(readToIdentifier((yyvsp[-1].string)))
+									return 1;
+							}
+#line 1357 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 98 "grammar.y" /* yacc.c:1646  */
+#line 113 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1338 "grammar.tab.c" /* yacc.c:1646  */
+#line 1363 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1342 "grammar.tab.c" /* yacc.c:1646  */
+#line 1367 "grammar.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1566,10 +1591,13 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 103 "grammar.y" /* yacc.c:1906  */
+#line 118 "grammar.y" /* yacc.c:1906  */
 
 
-int initializeIdentifier(std::string name)
+/********************************METHODS***********************************/
+
+using namespace std;
+int initializeIdentifier(string name)
 {
 	if(memoryMap.find(name) == memoryMap.end())
 	{
@@ -1585,20 +1613,59 @@ int initializeIdentifier(std::string name)
 		yyerror(error);
 		return 1;
 	}
+}
 
+int readToIdentifier(string name)
+{
+	AsmInstruction* a = new AsmInstruction("GET");
+	asmInstrunctions.push_back(a);
+	return assignValueToIdentifier(name);
+}
+
+int assignValueToIdentifier(string name)
+{
+	map<string, int>::iterator it = memoryMap.find(name);
+	if(memoryMap.find(name) == memoryMap.end())
+	{
+		char* error =(char*) malloc(100);
+		error = strcpy(error, "Variable '");
+		error = strcat(error,name.c_str());
+		error = strcat(error,"' undeclared.");
+		yyerror(error);
+		return 1;
+	}
+	else
+	{
+		int placeInMemory = it->second;
+		AsmInstruction* a = new AsmInstruction("STORE", placeInMemory);
+		asmInstrunctions.push_back(a);
+		return 0;
+	}
+}
+
+void printAsmInstructions()
+{
+	ofstream outputFile;
+	outputFile.open("output.txt");
+	list<AsmInstruction*>::iterator it;
+	for (auto const& i : asmInstrunctions) {
+    outputFile << i->toString() << endl;
+	}
+	outputFile.close();
 }
 
 void yyerror (char const *s)
 {
-	printf("Error at line:%d in expression '%s', detail : %s \n", yylineno, yytext, s);
+	printf("Error at line:%d near expression '%s', detail : %s \n", yylineno, yytext, s);
 }
+
 
 int main (void)
 {
 	if(yyparse() == 0)
-		printf("\nProcess returned 0, no errors.");
+		printf("Process returned 0, no errors.\n");
 	else
-		printf("\nProcess returned 1, error.");
+		printf("Process returned 1, error.\n");
 
 		return 0;
 }

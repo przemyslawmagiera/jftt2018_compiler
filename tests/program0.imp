@@ -2,8 +2,9 @@ VAR
     a b
 BEGIN
     READ a;
-    WRITE a;
+    READ a;
+    READ b;
+    READ a;
     b := 2;
-    a := b;
-    WRITE b;
+    a := 4;
 END

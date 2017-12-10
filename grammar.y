@@ -5,22 +5,33 @@
 	#include <cstdlib>
 	#include <iostream>
 	#include <map>
+	#include <list>
+	#include "AsmInstruction.h"
+	#include <fstream>
 	extern "C" int yylex();
 	extern "C" int yyparse();
 	void yyerror (char const *);
 	extern int yylineno;
 	extern char* yytext;
 	int memory_pointer = 0;
+	int assignValueToIdentifier(std::string name);
+	void printAsmInstructions();
+	int readToIdentifier(std::string name);
 	int initializeIdentifier(std::string name);
+	void printAsmInstructions();
 	std::map<std::string, int> memoryMap;
+	std::list<AsmInstruction*> asmInstrunctions;
 %}
-
 %union {
 	char* string;
+	int integer;
 };
 
+//%type <string> command
+%type<string> identifier
+
 %token <string> num
-%token <string> PID "pidentifier"
+%token <string> PID "identifier"
 
 
 %token 				VAR
@@ -59,12 +70,13 @@
 %token 				ERR
 
 %%
-program				:	VAR vdeclarations T_BEGIN commands END
+program				:	VAR vdeclarations T_BEGIN commands END { printAsmInstructions();
+								}
 
 vdeclarations	: vdeclarations PID {
-									if(initializeIdentifier($2))
+								if(initializeIdentifier($2))
 										return 1;
-									}
+								}
               | vdeclarations PID  T_LBR num T_RBR
              	|
 
@@ -77,7 +89,10 @@ command	      : identifier T_ASG expression T_EL
              	| WHILE condition DO commands ENDWHILE
              	| FOR PID FROM value TO value DO commands ENDFOR
              	| FOR PID FROM value DOWNTO value DO commands ENDFOR
-             	| READ identifier T_EL { //zapisz ze pod komorka pamieci memoryMap.find(identifier)
+             	| READ identifier T_EL {
+							//wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
+								if(readToIdentifier($2))
+									return 1;
 							}
              	| WRITE value T_EL
 
@@ -98,12 +113,15 @@ condition			: value T_EQ value
 value:					num
              	| identifier {}
 
-identifier:   	PID
+identifier:   	PID //wyciagnij z mapy numer w pamieci pod ktorym jest identifier i wypluj
              	| PID T_LBR PID T_RBR
              	| PID  T_LBR num T_RBR
 %%
 
-int initializeIdentifier(std::string name)
+/********************************METHODS***********************************/
+
+using namespace std;
+int initializeIdentifier(string name)
 {
 	if(memoryMap.find(name) == memoryMap.end())
 	{
@@ -119,20 +137,59 @@ int initializeIdentifier(std::string name)
 		yyerror(error);
 		return 1;
 	}
+}
 
+int readToIdentifier(string name)
+{
+	AsmInstruction* a = new AsmInstruction("GET");
+	asmInstrunctions.push_back(a);
+	return assignValueToIdentifier(name);
+}
+
+int assignValueToIdentifier(string name)
+{
+	map<string, int>::iterator it = memoryMap.find(name);
+	if(memoryMap.find(name) == memoryMap.end())
+	{
+		char* error =(char*) malloc(100);
+		error = strcpy(error, "Variable '");
+		error = strcat(error,name.c_str());
+		error = strcat(error,"' undeclared.");
+		yyerror(error);
+		return 1;
+	}
+	else
+	{
+		int placeInMemory = it->second;
+		AsmInstruction* a = new AsmInstruction("STORE", placeInMemory);
+		asmInstrunctions.push_back(a);
+		return 0;
+	}
+}
+
+void printAsmInstructions()
+{
+	ofstream outputFile;
+	outputFile.open("output.mr");
+	list<AsmInstruction*>::iterator it;
+	for (auto const& i : asmInstrunctions) {
+    outputFile << i->toString() << endl;
+	}
+	outputFile.close();
 }
 
 void yyerror (char const *s)
 {
-	printf("Error at line:%d in expression '%s', detail : %s \n", yylineno, yytext, s);
+	printf("Error at line:%d near expression '%s', detail : %s \n", yylineno, yytext, s);
 }
+
 
 int main (void)
 {
 	if(yyparse() == 0)
-		printf("\nProcess returned 0, no errors.");
+		printf("Process returned 0, no errors.\n");
 	else
-		printf("\nProcess returned 1, error.");
+		printf("Process returned 1, error.\n");
 
 		return 0;
 }
