@@ -1,1 +1,0 @@
-/usr/bin/c++  -g   CMakeFiles/jftt2018_compiler.dir/interpreter/interpreter-cln.cc.o CMakeFiles/jftt2018_compiler.dir/interpreter/interpreter.cc.o  -o jftt2018_compiler 
