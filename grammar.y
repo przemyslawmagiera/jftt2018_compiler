@@ -7,6 +7,7 @@
 	#include <map>
 	#include <list>
 	#include "AsmInstruction.h"
+	#include "Adder.h"
 	#include "Identifier.h"
 	#include <fstream>
 	#include <bitset>
@@ -28,8 +29,9 @@
 	int readToIdentifier(std::string name);
 	int initializeIdentifier(std::string name);
 	void printAsmInstructions();
+	int writeNumber(int number);
+	int writeIdentifier(std::string name);
 	std::map<std::string, int> memoryMap;
-	std::list<int> assignmentMemoryList;
 	std::list<AsmInstruction*> asmInstrunctions;
 %}
 %union {
@@ -82,7 +84,10 @@
 %token 				ERR
 
 %%
-program				:	VAR vdeclarations T_BEGIN commands END { printAsmInstructions();
+program				:	VAR vdeclarations T_BEGIN commands END {
+								asmInstrunctions.push_back(new AsmInstruction("HALT"));
+								Adder::add(2,3);
+								printAsmInstructions();
 								}
 
 vdeclarations	: vdeclarations PID {
@@ -117,7 +122,19 @@ command	      : identifier T_ASG expression T_EL {
 								if(readToIdentifier($2))
 									return 1;
 							}
-             	| WRITE value T_EL
+             	| WRITE value T_EL {
+								if(std::regex_match($2, std::regex("[0-9]+")))
+								{
+									if(writeNumber(atoi($2)))
+										return 1;
+								}
+								else
+								{
+									if(writeIdentifier($2))
+										return 1;
+								}
+
+							}
 
 expression		:	value {$$ = $1;}
              	| value T_ADD value {}
@@ -146,6 +163,29 @@ identifier:   	PID {}
 /********************************METHODS***********************************/
 
 using namespace std;
+
+int writeNumber(int number)
+{
+	constructValueToRegister(number);
+	asmInstrunctions.push_back(new AsmInstruction("PUT"));
+	return 0;
+}
+
+int writeIdentifier(string name)
+{
+	map<string, int>::iterator it = memoryMap.find(name);
+	if(it == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return 1;
+	}
+	else
+	{
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second));
+		asmInstrunctions.push_back(new AsmInstruction("PUT"));
+		return 0;
+	}
+}
 
 string decToBin(int number)
 {
@@ -202,7 +242,7 @@ int constructValueToRegister(int value)
 {
 	string valueBin = decToBin(value);
 	asmInstrunctions.push_back(new AsmInstruction("ZERO"));
-	printf("DEBUG: %d is binary: %s\n",value, valueBin.c_str());
+	//printf("DEBUG: %d is binary: %s\n",value, valueBin.c_str());
 	for(int i=0; i<valueBin.length(); i++)
 	{
 		if(valueBin[i] == '0' && i!=0)
@@ -296,6 +336,7 @@ void yyerror (char const *s)
 
 int main (void)
 {
+	memory_pointer = 10;
 	if(yyparse() == 0)
 		printf("Process returned 0, no errors.\n");
 	else
