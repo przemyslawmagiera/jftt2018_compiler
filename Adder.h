@@ -6,6 +6,7 @@
 using namespace std;
 
 extern int constructValueToRegister(int value);
+extern void	undefinedVariableError(string varName);
 extern map<string, int> memoryMap;
 extern list<AsmInstruction*> asmInstrunctions;
 
@@ -23,6 +24,7 @@ class Adder
 */
 int Adder::add(int a, int b)
 {
+	//puts("chuje");
   constructValueToRegister(a);
   asmInstrunctions.push_back(new AsmInstruction("STORE", 0));
   constructValueToRegister(b);
@@ -30,7 +32,7 @@ int Adder::add(int a, int b)
 	return 0;
 }
 
-int Adder::add(int a, string name1)
+int Adder::add(int a, string name)
 {
 	map<string, int>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())
@@ -40,8 +42,31 @@ int Adder::add(int a, string name1)
 	}
 	else
 	{
-	  constructValueToRegister(b);
+	  constructValueToRegister(a);
 	  asmInstrunctions.push_back(new AsmInstruction("ADD", it->second));
+		return 0;
+	}
+}
+
+
+int Adder::add(string name1, string name2)
+{
+	map<string, int>::iterator it1 = memoryMap.find(name1);
+	map<string, int>::iterator it2 = memoryMap.find(name2);
+	if(it1 == memoryMap.end())
+	{
+		undefinedVariableError(name1);
+		return 1;
+	}
+	else if(it2 == memoryMap.end())
+	{
+		undefinedVariableError(name2);
+		return 1;
+	}
+	else
+	{
+	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second));
+	  asmInstrunctions.push_back(new AsmInstruction("ADD", it2->second));
 		return 0;
 	}
 }

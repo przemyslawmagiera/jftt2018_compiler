@@ -8,6 +8,7 @@
 	#include <list>
 	#include "AsmInstruction.h"
 	#include "Adder.h"
+	#include "Substractor.h"
 	#include "Identifier.h"
 	#include <fstream>
 	#include <bitset>
@@ -19,6 +20,8 @@
 	extern char* yytext;
 	int memory_pointer = 0;
 	int valueTakenFromIdentifier = 0;
+	int findVariableInMemory(std::string name);
+	void determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper);
 	int copyValueFromAnotherIdentifier(std::string from, std::string to);
 	int assignValueToIdentifier(std::string name, int value);
 	int constructValueToRegister(int value);
@@ -66,8 +69,8 @@
 %token				READ
 %token				WRITE
 %token				SKIP
-%token T_ADD	'+'
-%token T_MIN	'-'
+%token <string> T_ADD	'+'
+%token <string> T_MIN	'-'
 %token T_MUL	'*'
 %token T_DIV	'/'
 %token T_MOD	'%'
@@ -86,7 +89,6 @@
 %%
 program				:	VAR vdeclarations T_BEGIN commands END {
 								asmInstrunctions.push_back(new AsmInstruction("HALT"));
-								Adder::add(2,3);
 								printAsmInstructions();
 								}
 
@@ -101,13 +103,23 @@ commands			:	commands command
         			| command
 
 command	      : identifier T_ASG expression T_EL {
+									//printf("debug exp: %s \n", $3);
 									if(std::regex_match($3, std::regex("[0-9]+")))
 									{
 										if(assignValueToIdentifier($1, atoi($3)))
 											return 1;
 									}
+								else if(strcmp($3," OEX"))
+									{
+										//printf("debug identifier %s \n", $1);
+										int place = findVariableInMemory($1);
+										if(place == -1)
+											return 1;
+										asmInstrunctions.push_back(new AsmInstruction("STORE", place));
+									}
 									else
 									{
+										//printf("debug identifier %s \n", $1);
 										if(copyValueFromAnotherIdentifier($3, $1))
 											return 1;
 									}
@@ -137,8 +149,16 @@ command	      : identifier T_ASG expression T_EL {
 							}
 
 expression		:	value {$$ = $1;}
-             	| value T_ADD value {}
-             	| value T_MIN value {}
+             	| value T_ADD value {
+								determineAndExecuteExpressionOperation($1,$3,"+");
+								char f[4] = "OEX";
+								$$ = f;
+							}
+             	| value T_MIN value {
+								determineAndExecuteExpressionOperation($1,$3,"-");
+								char f[4] = "OEX";
+								$$ = f;
+							}
              	| value T_MUL value {}
              	| value T_DIV value {}
              	| value T_MOD value {}
@@ -163,6 +183,49 @@ identifier:   	PID {}
 /********************************METHODS***********************************/
 
 using namespace std;
+
+#define OPERATION_STORING_PLACE 1;
+
+int findVariableInMemory(string name)
+{
+	map<string, int>::iterator it = memoryMap.find(name);
+	if(it == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return -1;
+	}
+	else
+	{
+		return it->second;
+	}
+}
+
+void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper)
+{
+	//printf("debug oper: %s \n", oper.c_str());
+	int arg1Num = regex_match(arg1, std::regex("[0-9]+"));
+	int arg2Num = regex_match(arg2, std::regex("[0-9]+"));
+	if(oper == "+")
+	{
+		if(arg1Num && arg2Num)
+			Adder::add(atoi(arg1.c_str()), atoi(arg2.c_str()));
+		else if((!arg1Num && arg2Num) || (arg1Num && !arg2Num))
+			Adder::add(atoi(arg1.c_str()), arg2);
+		else if(!arg1Num && !arg2Num)
+			Adder::add(arg1,arg2);
+	}
+	else if(oper == "-")
+	{
+		if(arg1Num && arg2Num)
+			Substractor::sub(atoi(arg1.c_str()), atoi(arg2.c_str()));
+		else if(!arg1Num && arg2Num)
+			Substractor::sub(arg1, atoi(arg2.c_str()));
+		else if(arg1Num && !arg2Num)
+			Substractor::sub(atoi(arg1.c_str()), arg2);
+		else if(!arg1Num && !arg2Num)
+			Substractor::sub(arg1,arg2);
+	}
+}
 
 int writeNumber(int number)
 {
@@ -203,6 +266,23 @@ string decToBin(int number)
     reverse(result.begin(), result.end());
     return result;
 }
+
+int copyValueFromMemory(int from, std::string to)
+{
+	map<string, int>::iterator itTo = memoryMap.find(to);
+	if (itTo == memoryMap.end())
+	{
+		undefinedVariableError(to);
+		return 1;
+	}
+	else
+	{
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", from));
+		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second));
+	}
+	return 0;
+}
+
 int copyValueFromAnotherIdentifier(std::string from, std::string to)
 {
 	map<string, int>::iterator itFrom = memoryMap.find(from);
@@ -248,6 +328,7 @@ int constructValueToRegister(int value)
 		if(valueBin[i] == '0' && i!=0)
 			asmInstrunctions.push_back(new AsmInstruction("SHL"));
 		else if(valueBin[i] == '1')
+			asmInstrunctions.push_back(new AsmInstruction("SHL"));
 			asmInstrunctions.push_back(new AsmInstruction("INC"));
 	}
 	return 0;
@@ -298,7 +379,7 @@ int storeIdentifier(string name)
 void printAsmInstructions()
 {
 	ofstream outputFile;
-	outputFile.open("output.mr");
+	outputFile.open("output1.mr");
 	list<AsmInstruction*>::iterator it;
 	for (auto const& i : asmInstrunctions) {
     outputFile << i->toString() << endl;
@@ -330,7 +411,14 @@ void numberTooBigError(string varName)
 
 void yyerror (char const *s)
 {
+	if(strncmp(s," syntax",6))
+	{
+		printf("Error at line:%d near expression '%s', detail : %s \n", yylineno, yytext, "unrecognised expression");
+	}
+	else
+	{
 	printf("Error at line:%d near expression '%s', detail : %s \n", yylineno, yytext, s);
+	}
 }
 
 

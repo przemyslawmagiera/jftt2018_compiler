@@ -1,0 +1,9 @@
+VAR
+    a b c
+BEGIN
+    a := 1 + 15;
+    b := 4 - 6;
+    c := a - b;
+    b := a + c;
+    WRITE a;
+END
