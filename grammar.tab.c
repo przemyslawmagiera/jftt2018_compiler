@@ -1464,40 +1464,46 @@ yyreduce:
 #line 1465 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
+  case 22:
+#line 166 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1471 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
   case 28:
 #line 173 "grammar.y" /* yacc.c:1646  */
     { (yyval.string) = (yyvsp[0].string);
 									//printf("debug value>num :%d\n", $1);
 								}
-#line 1473 "grammar.tab.c" /* yacc.c:1646  */
+#line 1479 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
 #line 176 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1479 "grammar.tab.c" /* yacc.c:1646  */
+#line 1485 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
 #line 178 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1485 "grammar.tab.c" /* yacc.c:1646  */
+#line 1491 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
 #line 179 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1491 "grammar.tab.c" /* yacc.c:1646  */
+#line 1497 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
 #line 180 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1497 "grammar.tab.c" /* yacc.c:1646  */
+#line 1503 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1501 "grammar.tab.c" /* yacc.c:1646  */
+#line 1507 "grammar.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires

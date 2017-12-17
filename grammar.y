@@ -10,6 +10,7 @@
 	#include "Adder.h"
 	#include "Substractor.h"
 	#include "Identifier.h"
+	#include "Condition.h"
 	#include <fstream>
 	#include <bitset>
 	#include <regex>
@@ -125,7 +126,9 @@ command	      : identifier T_ASG expression T_EL {
 									}
 								}
              	| IF condition THEN commands ELSE commands ENDIF
-             	| IF condition THEN commands ENDIF
+             	| IF condition THEN commands ENDIF {
+
+							}
              	| WHILE condition DO commands ENDWHILE
              	| FOR PID FROM value TO value DO commands ENDFOR
              	| FOR PID FROM value DOWNTO value DO commands ENDFOR
@@ -163,7 +166,7 @@ expression		:	value {$$ = $1;}
              	| value T_DIV value {}
              	| value T_MOD value {}
 
-condition			: value T_EQ value
+condition			: value T_EQ value {}
              	| value T_NEQ value
              	| value T_RGT value
              	| value T_LGT value
