@@ -30,15 +30,6 @@ Iffer::Iffer(string a1,string b1, string anLogicCondition)
 
 void go()
 {
-  int startLineNo = asmInstrunctions.size();
-  if(logicCondition == "<")
-    Condition::gt(a,b);
-  else if(logicCondition == ">")
-    Condition::gt(b,a);
-  else if(logicCondition == ">=")
-    Condition::gte(b,a);
-  else if(logicCondition == "<=")
-    Condition::gte(a,b);
   int afterConditionLineNo = asmInstrunctions.size();
   asmInstrunctions.push_back(new AsmInstruction("JZERO", "END"));
 }

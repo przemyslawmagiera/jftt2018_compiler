@@ -22,7 +22,7 @@
 	int memory_pointer = 0;
 	int valueTakenFromIdentifier = 0;
 	int findVariableInMemory(std::string name);
-	void determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper);
+	void determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper,int gte);
 	int copyValueFromAnotherIdentifier(std::string from, std::string to);
 	int assignValueToIdentifier(std::string name, int value);
 	int constructValueToRegister(int value);
@@ -37,16 +37,19 @@
 	int writeIdentifier(std::string name);
 	std::map<std::string, int> memoryMap;
 	std::list<AsmInstruction*> asmInstrunctions;
+	std::stack<int> jzeroLinePointerStack;
 %}
 %union {
 	char* string;
 	int integer;
 	//Identifier* identifier;
+	//Command* command;
 };
 
 %type <string> value
 %type <string> expression
 %type<string> identifier
+%type<string> condition
 
 %token <string> num
 %token <string> PID "identifier"
@@ -77,10 +80,10 @@
 %token T_MOD	'%'
 %token T_EQ 	'='
 %token T_NEQ	"<>"
-%token T_RGT	'<'
-%token T_RGE	"<="
-%token T_LGE	">="
-%token T_LGT 	'>'
+%token<string> T_RGT	"<"
+%token<string> T_RGE	"<="
+%token<string> T_LGE	">="
+%token<string> T_LGT 	">"
 %token T_ASG	":="
 %token T_EL		';'
 %token T_LBR	'['
@@ -126,9 +129,15 @@ command	      : identifier T_ASG expression T_EL {
 									}
 								}
              	| IF condition THEN commands ELSE commands ENDIF
-             	| IF condition THEN commands ENDIF {
-
-							}
+             	| IF condition {
+								jzeroLinePointerStack.push(asmInstrunctions.size());
+							  asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
+							} THEN commands {
+									std::list<AsmInstruction*>::iterator it = asmInstrunctions.begin();
+							    std::advance(it, jzeroLinePointerStack.top());
+									asmInstrunctions.erase(it);
+									asmInstrunctions.insert(it, new AsmInstruction("JZERO", asmInstrunctions.size()+1));
+							} ENDIF
              	| WHILE condition DO commands ENDWHILE
              	| FOR PID FROM value TO value DO commands ENDFOR
              	| FOR PID FROM value DOWNTO value DO commands ENDFOR
@@ -151,14 +160,16 @@ command	      : identifier T_ASG expression T_EL {
 
 							}
 
+innerIf				:
+
 expression		:	value {$$ = $1;}
              	| value T_ADD value {
-								determineAndExecuteExpressionOperation($1,$3,"+");
+								determineAndExecuteExpressionOperation($1,$3,"+",0);
 								char f[4] = "OEX";
 								$$ = f;
 							}
              	| value T_MIN value {
-								determineAndExecuteExpressionOperation($1,$3,"-");
+								determineAndExecuteExpressionOperation($1,$3,"-",0);
 								char f[4] = "OEX";
 								$$ = f;
 							}
@@ -167,11 +178,11 @@ expression		:	value {$$ = $1;}
              	| value T_MOD value {}
 
 condition			: value T_EQ value {}
-             	| value T_NEQ value
-             	| value T_RGT value
-             	| value T_LGT value
-             	| value T_RGE value
-             	| value T_LGE value
+             	| value T_NEQ value {}
+             	| value T_RGT value {Condition::gt($3,$1); $$ = $2;} //w akumulatorze bedzie cos wiekszogo od 0
+             	| value T_LGT value {Condition::gt($1,$3); $$ = $2;} //w akumulatorze bedzie cos wiekszogo od 0
+             	| value T_RGE value {Condition::gte($1,$3); $$ = $2;} //bedzie  0
+             	| value T_LGE value {Condition::gte($3,$1); $$ = $2;} //bedzie  0
 
 value					:	num { $$ = $1;
 									//printf("debug value>num :%d\n", $1);
@@ -202,8 +213,8 @@ int findVariableInMemory(string name)
 		return it->second;
 	}
 }
-
-void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper)
+//gte sluzy do tego zeby zrobic trik ze zwiekszeniem b przy porownaniu
+void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, int gte)
 {
 	//printf("debug oper: %s \n", oper.c_str());
 	int arg1Num = regex_match(arg1, std::regex("[0-9]+"));
@@ -220,13 +231,33 @@ void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper)
 	else if(oper == "-")
 	{
 		if(arg1Num && arg2Num)
-			Substractor::sub(atoi(arg1.c_str()), atoi(arg2.c_str()));
+		{
+			if(gte)
+				Substractor::sub(atoi(arg1.c_str())+1, atoi(arg2.c_str()));
+			else
+				Substractor::sub(atoi(arg1.c_str()), atoi(arg2.c_str()));
+		}
 		else if(!arg1Num && arg2Num)
-			Substractor::sub(arg1, atoi(arg2.c_str()));
+		{
+			if(gte)
+				Substractor::subge(arg1, atoi(arg2.c_str()));
+			else
+				Substractor::sub(arg1, atoi(arg2.c_str()));
+		}
 		else if(arg1Num && !arg2Num)
-			Substractor::sub(atoi(arg1.c_str()), arg2);
+		{
+			if(gte)
+				Substractor::sub(atoi(arg1.c_str())+1, arg2);
+			else
+				Substractor::sub(atoi(arg1.c_str()), arg2);
+		}
 		else if(!arg1Num && !arg2Num)
-			Substractor::sub(arg1,arg2);
+		{
+			if(gte)
+				Substractor::subge(arg1,arg2);
+			else
+				Substractor::sub(arg1,arg2);
+		}
 	}
 }
 

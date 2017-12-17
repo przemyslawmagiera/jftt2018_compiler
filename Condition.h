@@ -5,7 +5,7 @@
 
 using namespace std;
 
-extern void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper);
+extern void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, int gte);
 
 class Condition
 {
@@ -13,13 +13,11 @@ class Condition
     static int gt(string, string);
     static int gte(string, string);
 };
-/* w akumulatorze znajdzie się coś większego od zera jeśli to prawda*/
-int gt(sting a, string b)
+int gt(string a, string b)
 {
-  determineAndExecuteExpressionOperation(a,b,"-");
+  determineAndExecuteExpressionOperation(a,b,"-", 0);
 }
-/* w akumulatorze == 0 jeśli to prawda*/
-int gte(sting a, string b)
+int gte(string a, string b)
 {
-  determineAndExecuteExpressionOperation(b,a,"-");
+  determineAndExecuteExpressionOperation(a,b,"-", 1);
 }
