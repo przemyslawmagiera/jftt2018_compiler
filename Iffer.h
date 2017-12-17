@@ -1,12 +1,12 @@
 #include <string>
 #include <cstdlib>
-#include <list>
+#include <vector>
 #include "AsmInstruction.h"
 #include "Condition.h"
 
 using namespace std;
 
-extern list<AsmInstruction*> asmInstrunctions;
+extern vector<AsmInstruction*> asmInstrunctions;
 
 class Iffer
 {

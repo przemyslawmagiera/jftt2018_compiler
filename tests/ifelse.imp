@@ -1,0 +1,28 @@
+VAR
+    a b c d
+BEGIN
+  a := 1;
+  b := 2;
+  b := 10 + b;
+  IF b > a THEN
+    WRITE a;
+    WRITE b;
+    b:=a;
+    IF b = a THEN
+      b := b + 10;
+      IF b <= a THEN
+        b := b + 988;
+        WRITE b;
+      ELSE
+        b := b - 9;
+        WRITE b;
+      ENDIF
+    ELSE
+      a := 997;
+      WRITE a;
+    ENDIF
+  ELSE
+    WRITE 996;
+  ENDIF
+  WRITE 0;
+END

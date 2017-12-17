@@ -5,5 +5,6 @@ BEGIN
     b := 4 - 6;
     c := a - b;
     b := a + c;
+    b := 1 + 1;
     WRITE a;
 END

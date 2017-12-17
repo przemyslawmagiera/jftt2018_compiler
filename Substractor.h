@@ -1,6 +1,6 @@
 #include <string>
 #include <cstdlib>
-#include <list>
+#include <vector>
 #include <map>
 
 using namespace std;
@@ -8,7 +8,7 @@ using namespace std;
 extern int constructValueToRegister(int value);
 extern void	undefinedVariableError(string varName);
 extern map<string, int> memoryMap;
-extern list<AsmInstruction*> asmInstrunctions;
+extern vector<AsmInstruction*> asmInstrunctions;
 
 
 class Substractor
@@ -29,6 +29,7 @@ int Substractor::sub(int a, int b)
 {
   constructValueToRegister(b);
   asmInstrunctions.push_back(new AsmInstruction("STORE", 0));
+	//printf("a to: %d\n", a);
   constructValueToRegister(a);
   asmInstrunctions.push_back(new AsmInstruction("SUB", 0));
 	return 0;

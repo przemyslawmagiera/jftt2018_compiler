@@ -1,14 +1,15 @@
 #include <string>
 #include <cstdlib>
-#include <list>
+#include <vector>
 #include <map>
+
 
 using namespace std;
 
 extern int constructValueToRegister(int value);
 extern void	undefinedVariableError(string varName);
 extern map<string, int> memoryMap;
-extern list<AsmInstruction*> asmInstrunctions;
+extern vector<AsmInstruction*> asmInstrunctions;
 
 
 class Adder

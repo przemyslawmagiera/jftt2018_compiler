@@ -5,7 +5,7 @@
 	#include <cstdlib>
 	#include <iostream>
 	#include <map>
-	#include <list>
+	#include <vector>
 	#include "AsmInstruction.h"
 	#include "Adder.h"
 	#include "Substractor.h"
@@ -36,7 +36,7 @@
 	int writeNumber(int number);
 	int writeIdentifier(std::string name);
 	std::map<std::string, int> memoryMap;
-	std::list<AsmInstruction*> asmInstrunctions;
+	std::vector<AsmInstruction*> asmInstrunctions;
 	std::stack<int> jzeroLinePointerStack;
 %}
 %union {
@@ -73,13 +73,13 @@
 %token				READ
 %token				WRITE
 %token				SKIP
-%token <string> T_ADD	'+'
-%token <string> T_MIN	'-'
+%token T_ADD	'+'
+%token T_MIN	'-'
 %token T_MUL	'*'
 %token T_DIV	'/'
 %token T_MOD	'%'
-%token T_EQ 	'='
-%token T_NEQ	"<>"
+%token<string> T_EQ 	"="
+%token<string> T_NEQ	"<>"
 %token<string> T_RGT	"<"
 %token<string> T_RGE	"<="
 %token<string> T_LGE	">="
@@ -128,16 +128,13 @@ command	      : identifier T_ASG expression T_EL {
 											return 1;
 									}
 								}
-             	| IF condition THEN commands ELSE commands ENDIF
              	| IF condition {
+								//printf("pushneem wlasnie: %d",asmInstrunctions.size());
 								jzeroLinePointerStack.push(asmInstrunctions.size());
 							  asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
-							} THEN commands {
-									std::list<AsmInstruction*>::iterator it = asmInstrunctions.begin();
-							    std::advance(it, jzeroLinePointerStack.top());
-									asmInstrunctions.erase(it);
-									asmInstrunctions.insert(it, new AsmInstruction("JZERO", asmInstrunctions.size()+1));
-							} ENDIF
+							} THEN commands{
+
+							} innerIf
              	| WHILE condition DO commands ENDWHILE
              	| FOR PID FROM value TO value DO commands ENDFOR
              	| FOR PID FROM value DOWNTO value DO commands ENDFOR
@@ -160,10 +157,31 @@ command	      : identifier T_ASG expression T_EL {
 
 							}
 
-innerIf				:
+innerIf				: ELSE {
+								int jzero = jzeroLinePointerStack.top();
+								jzeroLinePointerStack.pop();
+								//printf("scionglem wlasnie: %d",jzero);
+								asmInstrunctions.push_back(new AsmInstruction("ZERO"));
+								jzeroLinePointerStack.push(asmInstrunctions.size());
+								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
+								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
+							} commands ENDIF {
+								int jzero = jzeroLinePointerStack.top();
+								jzeroLinePointerStack.pop();
+								//printf("scionglem wlasnie: %d",jzero);
+								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
+							}
+							| ENDIF {
+								int jzero = jzeroLinePointerStack.top();
+								jzeroLinePointerStack.pop();
+								//printf("scionglem wlasnie: %d",jzero);
+								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
+							}
 
 expression		:	value {$$ = $1;}
              	| value T_ADD value {
+
+								printf("debug value>num :%s + %s\n",$1, $3);
 								determineAndExecuteExpressionOperation($1,$3,"+",0);
 								char f[4] = "OEX";
 								$$ = f;
@@ -177,15 +195,47 @@ expression		:	value {$$ = $1;}
              	| value T_DIV value {}
              	| value T_MOD value {}
 
-condition			: value T_EQ value {}
-             	| value T_NEQ value {}
-             	| value T_RGT value {Condition::gt($3,$1); $$ = $2;} //w akumulatorze bedzie cos wiekszogo od 0
-             	| value T_LGT value {Condition::gt($1,$3); $$ = $2;} //w akumulatorze bedzie cos wiekszogo od 0
-             	| value T_RGE value {Condition::gte($1,$3); $$ = $2;} //bedzie  0
-             	| value T_LGE value {Condition::gte($3,$1); $$ = $2;} //bedzie  0
+condition			: value T_EQ value {
+								string a($1);
+								string b($3);
+								determineAndExecuteExpressionOperation(a,b,"-", 0);
+								asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+								determineAndExecuteExpressionOperation(b,a,"-", 0);
+								asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								constructValueToRegister(1);
+								asmInstrunctions.push_back(new AsmInstruction("SUB", 5));
+								asmInstrunctions.push_back(new AsmInstruction("SUB", 6));
+							}
+             	| value T_NEQ value {
+
+							}
+             	| value T_RGT value {
+								string a($1);
+								string b($3);
+							  determineAndExecuteExpressionOperation(b,a,"-", 0);
+								$$ = $2;
+							}
+             	| value T_LGT value {
+								string a($1);
+								string b($3);
+							  determineAndExecuteExpressionOperation(a,b,"-", 0);
+								$$ = $2;
+							}
+             	| value T_RGE value {
+								string a($1);
+								string b($3);
+							  determineAndExecuteExpressionOperation(b,a,"-", 1);
+								$$ = $2;
+							}
+             	| value T_LGE value {
+								string a($1);
+								string b($3);
+							  determineAndExecuteExpressionOperation(a,b,"-", 1);
+								$$ = $2;
+							}
 
 value					:	num { $$ = $1;
-									//printf("debug value>num :%d\n", $1);
+									//printf("debug value>num :%s\n", $1);
 								}
              	| identifier {}
 
@@ -362,8 +412,10 @@ int constructValueToRegister(int value)
 		if(valueBin[i] == '0' && i!=0)
 			asmInstrunctions.push_back(new AsmInstruction("SHL"));
 		else if(valueBin[i] == '1')
+		{
 			asmInstrunctions.push_back(new AsmInstruction("SHL"));
 			asmInstrunctions.push_back(new AsmInstruction("INC"));
+		}
 	}
 	return 0;
 }
@@ -414,7 +466,7 @@ void printAsmInstructions()
 {
 	ofstream outputFile;
 	outputFile.open("output1.mr");
-	list<AsmInstruction*>::iterator it;
+	vector<AsmInstruction*>::iterator it;
 	for (auto const& i : asmInstrunctions) {
     outputFile << i->toString() << endl;
 	}
