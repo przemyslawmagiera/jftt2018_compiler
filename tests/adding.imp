@@ -1,10 +1,5 @@
 VAR
     a b c
 BEGIN
-    a := 1 + 15;
-    b := 4 - 6;
-    c := a - b;
-    b := a + c;
-    b := 1 + 1;
-    WRITE a;
+    b := a + 1;
 END

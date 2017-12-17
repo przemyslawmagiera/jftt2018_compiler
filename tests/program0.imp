@@ -6,7 +6,6 @@ BEGIN
     b := 2;
     a := 4;
     a := b;
-    a := 0 + 1;
     WRITE a;
     WRITE b;
     WRITE 34;

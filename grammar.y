@@ -178,10 +178,9 @@ innerIf				: ELSE {
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
 							}
 
-expression		:	value {$$ = $1;}
+expression		:	value {}
              	| value T_ADD value {
-
-								printf("debug value>num :%s + %s\n",$1, $3);
+								//printf("debug value>num :%s + %s\n",$1, $3);
 								determineAndExecuteExpressionOperation($1,$3,"+",0);
 								char f[4] = "OEX";
 								$$ = f;
@@ -269,12 +268,17 @@ void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper,
 	//printf("debug oper: %s \n", oper.c_str());
 	int arg1Num = regex_match(arg1, std::regex("[0-9]+"));
 	int arg2Num = regex_match(arg2, std::regex("[0-9]+"));
+	//printf("debug arg1: %s czy num: %d arg2: %s, czy num: %d \n",arg1.c_str(), arg1Num, arg2.c_str(), arg2Num);
 	if(oper == "+")
 	{
 		if(arg1Num && arg2Num)
 			Adder::add(atoi(arg1.c_str()), atoi(arg2.c_str()));
-		else if((!arg1Num && arg2Num) || (arg1Num && !arg2Num))
+		else if(!arg1Num && arg2Num)
+			Adder::add(atoi(arg2.c_str()), arg1);
+		else if(arg1Num && !arg2Num)
+		{
 			Adder::add(atoi(arg1.c_str()), arg2);
+		}
 		else if(!arg1Num && !arg2Num)
 			Adder::add(arg1,arg2);
 	}

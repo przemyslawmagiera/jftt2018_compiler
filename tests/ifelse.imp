@@ -3,12 +3,12 @@ VAR
 BEGIN
   a := 1;
   b := 2;
-  b := 10 + b;
   IF b > a THEN
     WRITE a;
     WRITE b;
-    b:=a;
-    IF b = a THEN
+    b := a;
+    WRITE b;
+    IF b <= a THEN
       b := b + 10;
       IF b <= a THEN
         b := b + 988;
