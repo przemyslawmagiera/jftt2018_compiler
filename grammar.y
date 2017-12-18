@@ -108,19 +108,20 @@ commands			:	commands command
 
 command	      : identifier T_ASG expression T_EL {
 									//printf("debug exp: %s \n", $3);
+									string exp($3);
 									if(std::regex_match($3, std::regex("[0-9]+")))
 									{
 										if(assignValueToIdentifier($1, atoi($3)))
 											return 1;
 									}
-								else if(strcmp($3," OEX"))
-									{
+								else if(exp == "OEX")
+										{
 										//printf("debug identifier %s \n", $1);
 										int place = findVariableInMemory($1);
 										if(place == -1)
 											return 1;
 										asmInstrunctions.push_back(new AsmInstruction("STORE", place));
-									}
+										}
 									else
 									{
 										//printf("debug identifier %s \n", $1);
@@ -178,7 +179,7 @@ innerIf				: ELSE {
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
 							}
 
-expression		:	value {}
+expression		:	value {$$ = $1;}
              	| value T_ADD value {
 								//printf("debug value>num :%s + %s\n",$1, $3);
 								determineAndExecuteExpressionOperation($1,$3,"+",0);
@@ -236,9 +237,9 @@ condition			: value T_EQ value {
 value					:	num { $$ = $1;
 									//printf("debug value>num :%s\n", $1);
 								}
-             	| identifier {}
+             	| identifier {$$ = $1;}
 
-identifier:   	PID {}
+identifier:   	PID {$$ = $1;}
              	| PID T_LBR PID T_RBR  {}
              	| PID  T_LBR num T_RBR  {}
 %%

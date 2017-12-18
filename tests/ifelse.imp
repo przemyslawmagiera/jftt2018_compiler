@@ -7,14 +7,13 @@ BEGIN
     WRITE a;
     WRITE b;
     b := a;
-    WRITE b;
-    IF b <= a THEN
+    IF b = a THEN
       b := b + 10;
       IF b <= a THEN
         b := b + 988;
         WRITE b;
       ELSE
-        b := b - 9;
+        b := b - 8;
         WRITE b;
       ENDIF
     ELSE

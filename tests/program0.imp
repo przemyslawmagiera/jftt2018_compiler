@@ -1,12 +1,5 @@
 VAR
     a b
 BEGIN
-    READ b;
-    READ a;
-    b := 2;
-    a := 4;
     a := b;
-    WRITE a;
-    WRITE b;
-    WRITE 34;
 END

@@ -508,10 +508,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    94,    94,    99,   103,   104,   106,   107,   109,   131,
-     135,   131,   138,   139,   140,   141,   146,   160,   160,   174,
-     181,   182,   188,   193,   194,   195,   197,   208,   211,   217,
-     223,   229,   236,   239,   241,   242,   243
+       0,    94,    94,    99,   103,   104,   106,   107,   109,   132,
+     136,   132,   139,   140,   141,   142,   147,   161,   161,   175,
+     182,   183,   189,   194,   195,   196,   198,   209,   212,   218,
+     224,   230,   237,   240,   242,   243,   244
 };
 #endif
 
@@ -1373,19 +1373,20 @@ yyreduce:
 #line 109 "grammar.y" /* yacc.c:1646  */
     {
 									//printf("debug exp: %s \n", $3);
+									string exp((yyvsp[-1].string));
 									if(std::regex_match((yyvsp[-1].string), std::regex("[0-9]+")))
 									{
 										if(assignValueToIdentifier((yyvsp[-3].string), atoi((yyvsp[-1].string))))
 											return 1;
 									}
-								else if(strcmp((yyvsp[-1].string)," OEX"))
-									{
+								else if(exp == "OEX")
+										{
 										//printf("debug identifier %s \n", $1);
 										int place = findVariableInMemory((yyvsp[-3].string));
 										if(place == -1)
 											return 1;
 										asmInstrunctions.push_back(new AsmInstruction("STORE", place));
-									}
+										}
 									else
 									{
 										//printf("debug identifier %s \n", $1);
@@ -1393,39 +1394,39 @@ yyreduce:
 											return 1;
 									}
 								}
-#line 1397 "grammar.tab.c" /* yacc.c:1646  */
+#line 1398 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 131 "grammar.y" /* yacc.c:1646  */
+#line 132 "grammar.y" /* yacc.c:1646  */
     {
 								//printf("pushneem wlasnie: %d",asmInstrunctions.size());
 								jzeroLinePointerStack.push(asmInstrunctions.size());
 							  asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
 							}
-#line 1407 "grammar.tab.c" /* yacc.c:1646  */
+#line 1408 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 135 "grammar.y" /* yacc.c:1646  */
+#line 136 "grammar.y" /* yacc.c:1646  */
     {
 
 							}
-#line 1415 "grammar.tab.c" /* yacc.c:1646  */
+#line 1416 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 141 "grammar.y" /* yacc.c:1646  */
+#line 142 "grammar.y" /* yacc.c:1646  */
     {
 							//wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
 								if(readToIdentifier((yyvsp[-1].string)))
 									return 1;
 							}
-#line 1425 "grammar.tab.c" /* yacc.c:1646  */
+#line 1426 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 146 "grammar.y" /* yacc.c:1646  */
+#line 147 "grammar.y" /* yacc.c:1646  */
     {
 								if(std::regex_match((yyvsp[-1].string), std::regex("[0-9]+")))
 								{
@@ -1439,11 +1440,11 @@ yyreduce:
 								}
 
 							}
-#line 1443 "grammar.tab.c" /* yacc.c:1646  */
+#line 1444 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 160 "grammar.y" /* yacc.c:1646  */
+#line 161 "grammar.y" /* yacc.c:1646  */
     {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
@@ -1453,78 +1454,78 @@ yyreduce:
 								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
 							}
-#line 1457 "grammar.tab.c" /* yacc.c:1646  */
+#line 1458 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 168 "grammar.y" /* yacc.c:1646  */
+#line 169 "grammar.y" /* yacc.c:1646  */
     {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
 								//printf("scionglem wlasnie: %d",jzero);
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
 							}
-#line 1468 "grammar.tab.c" /* yacc.c:1646  */
+#line 1469 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 174 "grammar.y" /* yacc.c:1646  */
+#line 175 "grammar.y" /* yacc.c:1646  */
     {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
 								//printf("scionglem wlasnie: %d",jzero);
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
 							}
-#line 1479 "grammar.tab.c" /* yacc.c:1646  */
+#line 1480 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 181 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1485 "grammar.tab.c" /* yacc.c:1646  */
+#line 182 "grammar.y" /* yacc.c:1646  */
+    {(yyval.string) = (yyvsp[0].string);}
+#line 1486 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 182 "grammar.y" /* yacc.c:1646  */
+#line 183 "grammar.y" /* yacc.c:1646  */
     {
 								//printf("debug value>num :%s + %s\n",$1, $3);
 								determineAndExecuteExpressionOperation((yyvsp[-2].string),(yyvsp[0].string),"+",0);
 								char f[4] = "OEX";
 								(yyval.string) = f;
 							}
-#line 1496 "grammar.tab.c" /* yacc.c:1646  */
+#line 1497 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 188 "grammar.y" /* yacc.c:1646  */
+#line 189 "grammar.y" /* yacc.c:1646  */
     {
 								determineAndExecuteExpressionOperation((yyvsp[-2].string),(yyvsp[0].string),"-",0);
 								char f[4] = "OEX";
 								(yyval.string) = f;
 							}
-#line 1506 "grammar.tab.c" /* yacc.c:1646  */
+#line 1507 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 193 "grammar.y" /* yacc.c:1646  */
+#line 194 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1512 "grammar.tab.c" /* yacc.c:1646  */
+#line 1513 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 194 "grammar.y" /* yacc.c:1646  */
+#line 195 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1518 "grammar.tab.c" /* yacc.c:1646  */
+#line 1519 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 195 "grammar.y" /* yacc.c:1646  */
+#line 196 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1524 "grammar.tab.c" /* yacc.c:1646  */
+#line 1525 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 197 "grammar.y" /* yacc.c:1646  */
+#line 198 "grammar.y" /* yacc.c:1646  */
     {
 								string a((yyvsp[-2].string));
 								string b((yyvsp[0].string));
@@ -1536,95 +1537,95 @@ yyreduce:
 								asmInstrunctions.push_back(new AsmInstruction("SUB", 5));
 								asmInstrunctions.push_back(new AsmInstruction("SUB", 6));
 							}
-#line 1540 "grammar.tab.c" /* yacc.c:1646  */
+#line 1541 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 208 "grammar.y" /* yacc.c:1646  */
+#line 209 "grammar.y" /* yacc.c:1646  */
     {
 
 							}
-#line 1548 "grammar.tab.c" /* yacc.c:1646  */
+#line 1549 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 211 "grammar.y" /* yacc.c:1646  */
+#line 212 "grammar.y" /* yacc.c:1646  */
     {
 								string a((yyvsp[-2].string));
 								string b((yyvsp[0].string));
 							  determineAndExecuteExpressionOperation(b,a,"-", 0);
 								(yyval.string) = (yyvsp[-1].string);
 							}
-#line 1559 "grammar.tab.c" /* yacc.c:1646  */
+#line 1560 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 217 "grammar.y" /* yacc.c:1646  */
+#line 218 "grammar.y" /* yacc.c:1646  */
     {
 								string a((yyvsp[-2].string));
 								string b((yyvsp[0].string));
 							  determineAndExecuteExpressionOperation(a,b,"-", 0);
 								(yyval.string) = (yyvsp[-1].string);
 							}
-#line 1570 "grammar.tab.c" /* yacc.c:1646  */
+#line 1571 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 223 "grammar.y" /* yacc.c:1646  */
+#line 224 "grammar.y" /* yacc.c:1646  */
     {
 								string a((yyvsp[-2].string));
 								string b((yyvsp[0].string));
 							  determineAndExecuteExpressionOperation(b,a,"-", 1);
 								(yyval.string) = (yyvsp[-1].string);
 							}
-#line 1581 "grammar.tab.c" /* yacc.c:1646  */
+#line 1582 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 229 "grammar.y" /* yacc.c:1646  */
+#line 230 "grammar.y" /* yacc.c:1646  */
     {
 								string a((yyvsp[-2].string));
 								string b((yyvsp[0].string));
 							  determineAndExecuteExpressionOperation(a,b,"-", 1);
 								(yyval.string) = (yyvsp[-1].string);
 							}
-#line 1592 "grammar.tab.c" /* yacc.c:1646  */
+#line 1593 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 236 "grammar.y" /* yacc.c:1646  */
+#line 237 "grammar.y" /* yacc.c:1646  */
     { (yyval.string) = (yyvsp[0].string);
 									//printf("debug value>num :%s\n", $1);
 								}
-#line 1600 "grammar.tab.c" /* yacc.c:1646  */
+#line 1601 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 239 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1606 "grammar.tab.c" /* yacc.c:1646  */
+#line 240 "grammar.y" /* yacc.c:1646  */
+    {(yyval.string) = (yyvsp[0].string);}
+#line 1607 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 241 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1612 "grammar.tab.c" /* yacc.c:1646  */
+#line 242 "grammar.y" /* yacc.c:1646  */
+    {(yyval.string) = (yyvsp[0].string);}
+#line 1613 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 242 "grammar.y" /* yacc.c:1646  */
+#line 243 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1618 "grammar.tab.c" /* yacc.c:1646  */
+#line 1619 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 243 "grammar.y" /* yacc.c:1646  */
+#line 244 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1624 "grammar.tab.c" /* yacc.c:1646  */
+#line 1625 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1628 "grammar.tab.c" /* yacc.c:1646  */
+#line 1629 "grammar.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1852,7 +1853,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 244 "grammar.y" /* yacc.c:1906  */
+#line 245 "grammar.y" /* yacc.c:1906  */
 
 
 /********************************METHODS***********************************/
