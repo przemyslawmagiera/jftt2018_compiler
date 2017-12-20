@@ -1,0 +1,13 @@
+VAR
+  i j bug
+BEGIN
+  bug := 4;
+  i := 0;
+  j := 0;
+  WHILE i < 3 DO
+      i := i + 1;
+      WRITE i;
+  ENDWHILE
+  WRITE bug;
+  WRITE 0;
+END

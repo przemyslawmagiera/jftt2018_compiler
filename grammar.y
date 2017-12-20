@@ -10,10 +10,10 @@
 	#include "Adder.h"
 	#include "Substractor.h"
 	#include "Identifier.h"
-	#include "Condition.h"
 	#include <fstream>
 	#include <bitset>
 	#include <regex>
+	#include <algorithm>
 	extern "C" int yylex();
 	extern "C" int yyparse();
 	void yyerror (char const *);
@@ -22,7 +22,7 @@
 	int memory_pointer = 0;
 	int valueTakenFromIdentifier = 0;
 	int findVariableInMemory(std::string name);
-	void determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper,int gte);
+	int determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper,int gte);
 	int copyValueFromAnotherIdentifier(std::string from, std::string to);
 	int assignValueToIdentifier(std::string name, int value);
 	int constructValueToRegister(int value);
@@ -35,9 +35,14 @@
 	void printAsmInstructions();
 	int writeNumber(int number);
 	int writeIdentifier(std::string name);
+	void uninitializedVariableError(std::string varName);
+	int loadFromMemory(std::string name);
 	std::map<std::string, int> memoryMap;
 	std::vector<AsmInstruction*> asmInstrunctions;
 	std::stack<int> jzeroLinePointerStack;
+	std::stack<int> whileConditionPointerStack;
+	std::stack<int> whileJumpPointerStack;
+	std::vector<string> initializedVars;
 %}
 %union {
 	char* string;
@@ -108,20 +113,21 @@ commands			:	commands command
 
 command	      : identifier T_ASG expression T_EL {
 									//printf("debug exp: %s \n", $3);
+									initializedVars.push_back($1);
 									string exp($3);
 									if(std::regex_match($3, std::regex("[0-9]+")))
 									{
 										if(assignValueToIdentifier($1, atoi($3)))
 											return 1;
 									}
-								else if(exp == "OEX")
-										{
+									else if(exp == "OEX")
+									{
 										//printf("debug identifier %s \n", $1);
 										int place = findVariableInMemory($1);
 										if(place == -1)
 											return 1;
 										asmInstrunctions.push_back(new AsmInstruction("STORE", place));
-										}
+									}
 									else
 									{
 										//printf("debug identifier %s \n", $1);
@@ -136,7 +142,21 @@ command	      : identifier T_ASG expression T_EL {
 							} THEN commands{
 
 							} innerIf
-             	| WHILE condition DO commands ENDWHILE
+             	| WHILE {
+								whileConditionPointerStack.push(asmInstrunctions.size());
+							} condition{
+								whileJumpPointerStack.push(asmInstrunctions.size());
+								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
+
+							} DO commands ENDWHILE {
+								int whileConditionStart = whileConditionPointerStack.top();
+								whileConditionPointerStack.pop();
+								asmInstrunctions.push_back(new AsmInstruction("ZERO"));
+								asmInstrunctions.push_back(new AsmInstruction("JZERO", whileConditionStart));
+								int whileJump = whileJumpPointerStack.top();
+								whileJumpPointerStack.pop();
+								asmInstrunctions[whileJump]->arg = asmInstrunctions.size();
+							}
              	| FOR PID FROM value TO value DO commands ENDFOR
              	| FOR PID FROM value DOWNTO value DO commands ENDFOR
              	| READ identifier T_EL {
@@ -170,19 +190,20 @@ innerIf				: ELSE {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
 								//printf("scionglem wlasnie: %d",jzero);
-								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
+								asmInstrunctions[jzero]->arg = asmInstrunctions.size();
 							}
 							| ENDIF {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
 								//printf("scionglem wlasnie: %d",jzero);
-								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
+								asmInstrunctions[jzero]->arg = asmInstrunctions.size();
 							}
 
 expression		:	value {$$ = $1;}
              	| value T_ADD value {
 								//printf("debug value>num :%s + %s\n",$1, $3);
-								determineAndExecuteExpressionOperation($1,$3,"+",0);
+								if(determineAndExecuteExpressionOperation($1,$3,"+",0))
+									return 1;
 								char f[4] = "OEX";
 								$$ = f;
 							}
@@ -198,9 +219,11 @@ expression		:	value {$$ = $1;}
 condition			: value T_EQ value {
 								string a($1);
 								string b($3);
-								determineAndExecuteExpressionOperation(a,b,"-", 0);
+								if(determineAndExecuteExpressionOperation(a,b,"-", 0))
+									return 1;
 								asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
-								determineAndExecuteExpressionOperation(b,a,"-", 0);
+								if(determineAndExecuteExpressionOperation(b,a,"-", 0))
+									return 1;
 								asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
 								constructValueToRegister(1);
 								asmInstrunctions.push_back(new AsmInstruction("SUB", 5));
@@ -212,25 +235,29 @@ condition			: value T_EQ value {
              	| value T_RGT value {
 								string a($1);
 								string b($3);
-							  determineAndExecuteExpressionOperation(b,a,"-", 0);
+							  if(determineAndExecuteExpressionOperation(b,a,"-", 0))
+									return 1;
 								$$ = $2;
 							}
              	| value T_LGT value {
 								string a($1);
 								string b($3);
-							  determineAndExecuteExpressionOperation(a,b,"-", 0);
+							  if(determineAndExecuteExpressionOperation(a,b,"-", 0))
+									return 1;
 								$$ = $2;
 							}
              	| value T_RGE value {
 								string a($1);
 								string b($3);
-							  determineAndExecuteExpressionOperation(b,a,"-", 1);
+							  if(determineAndExecuteExpressionOperation(b,a,"-", 1))
+									return 1;
 								$$ = $2;
 							}
              	| value T_LGE value {
 								string a($1);
 								string b($3);
-							  determineAndExecuteExpressionOperation(a,b,"-", 1);
+							  if(determineAndExecuteExpressionOperation(a,b,"-", 1))
+									return 1;
 								$$ = $2;
 							}
 
@@ -264,7 +291,7 @@ int findVariableInMemory(string name)
 	}
 }
 //gte sluzy do tego zeby zrobic trik ze zwiekszeniem b przy porownaniu
-void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, int gte)
+int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, int gte)
 {
 	//printf("debug oper: %s \n", oper.c_str());
 	int arg1Num = regex_match(arg1, std::regex("[0-9]+"));
@@ -273,47 +300,60 @@ void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper,
 	if(oper == "+")
 	{
 		if(arg1Num && arg2Num)
-			Adder::add(atoi(arg1.c_str()), atoi(arg2.c_str()));
+			if(Adder::add(atoi(arg1.c_str()), atoi(arg2.c_str())))
+				return 1;
 		else if(!arg1Num && arg2Num)
-			Adder::add(atoi(arg2.c_str()), arg1);
+			if(Adder::add(atoi(arg2.c_str()), arg1))
+				return 1;
 		else if(arg1Num && !arg2Num)
 		{
-			Adder::add(atoi(arg1.c_str()), arg2);
+			if(Adder::add(atoi(arg1.c_str()), arg2))
+				return 1;
 		}
 		else if(!arg1Num && !arg2Num)
-			Adder::add(arg1,arg2);
+			if(Adder::add(arg1,arg2))
+				return 1;
 	}
 	else if(oper == "-")
 	{
 		if(arg1Num && arg2Num)
 		{
 			if(gte)
-				Substractor::sub(atoi(arg1.c_str())+1, atoi(arg2.c_str()));
+				if(Substractor::sub(atoi(arg1.c_str())+1, atoi(arg2.c_str())))
+					return 1;
 			else
-				Substractor::sub(atoi(arg1.c_str()), atoi(arg2.c_str()));
+				if(Substractor::sub(atoi(arg1.c_str()), atoi(arg2.c_str())))
+					return 1;
 		}
 		else if(!arg1Num && arg2Num)
 		{
 			if(gte)
-				Substractor::subge(arg1, atoi(arg2.c_str()));
+				if(Substractor::subge(arg1, atoi(arg2.c_str())))
+					return 1;
 			else
-				Substractor::sub(arg1, atoi(arg2.c_str()));
+				if(Substractor::sub(arg1, atoi(arg2.c_str())))
+					return 1;
 		}
 		else if(arg1Num && !arg2Num)
 		{
 			if(gte)
-				Substractor::sub(atoi(arg1.c_str())+1, arg2);
+				if(Substractor::sub(atoi(arg1.c_str())+1, arg2))
+					return 1;
 			else
-				Substractor::sub(atoi(arg1.c_str()), arg2);
+				if(Substractor::sub(atoi(arg1.c_str()), arg2))
+					return 1;
 		}
 		else if(!arg1Num && !arg2Num)
 		{
 			if(gte)
-				Substractor::subge(arg1,arg2);
+				if(Substractor::subge(arg1,arg2))
+					return 1;
 			else
-				Substractor::sub(arg1,arg2);
+				if(Substractor::sub(arg1,arg2))
+					return 1;
 		}
 	}
+	return 0;
 }
 
 int writeNumber(int number)
@@ -333,6 +373,8 @@ int writeIdentifier(string name)
 	}
 	else
 	{
+		if(checkInitialization(name))
+			return 1;
 		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second));
 		asmInstrunctions.push_back(new AsmInstruction("PUT"));
 		return 0;
@@ -356,22 +398,6 @@ string decToBin(int number)
     return result;
 }
 
-int copyValueFromMemory(int from, std::string to)
-{
-	map<string, int>::iterator itTo = memoryMap.find(to);
-	if (itTo == memoryMap.end())
-	{
-		undefinedVariableError(to);
-		return 1;
-	}
-	else
-	{
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", from));
-		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second));
-	}
-	return 0;
-}
-
 int copyValueFromAnotherIdentifier(std::string from, std::string to)
 {
 	map<string, int>::iterator itFrom = memoryMap.find(from);
@@ -388,6 +414,8 @@ int copyValueFromAnotherIdentifier(std::string from, std::string to)
 	}
 	else
 	{
+		if(checkInitialization(from))
+			return 1;
 		asmInstrunctions.push_back(new AsmInstruction("LOAD", itFrom->second));
 		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second));
 	}
@@ -450,6 +478,16 @@ int readToIdentifier(string name)
 	return storeIdentifier(name);
 }
 
+int checkInitialization(string name)
+{
+	if(find(initializedVars.begin(), initializedVars.end(), name) != initializedVars.end())
+	{
+		return 0;
+	}
+	uninitializedVariableError(name);
+	return 1;
+}
+
 int storeIdentifier(string name)
 {
 	map<string, int>::iterator it = memoryMap.find(name);
@@ -490,6 +528,16 @@ void undefinedVariableError(string varName)
 	free(error);
 }
 
+void uninitializedVariableError(string varName)
+{
+	char* error =(char*) malloc(100);
+	error = strcpy(error, "Variable '");
+	error = strcat(error,varName.c_str());
+	error = strcat(error,"' uninitialized.");
+	yyerror(error);
+	free(error);
+}
+
 void numberTooBigError(string varName)
 {
 	char* error =(char*) malloc(100);
@@ -502,14 +550,7 @@ void numberTooBigError(string varName)
 
 void yyerror (char const *s)
 {
-	if(strncmp(s," syntax",6))
-	{
-		printf("Error at line:%d near expression '%s', detail : %s \n", yylineno, yytext, "unrecognised expression");
-	}
-	else
-	{
 	printf("Error at line:%d near expression '%s', detail : %s \n", yylineno, yytext, s);
-	}
 }
 
 

@@ -7,6 +7,7 @@ using namespace std;
 
 extern int constructValueToRegister(int value);
 extern void	undefinedVariableError(string varName);
+extern int	checkInitialization(string varName);
 extern map<string, int> memoryMap;
 extern vector<AsmInstruction*> asmInstrunctions;
 
@@ -45,6 +46,8 @@ int Substractor::sub(int a, string name)
 	}
 	else
 	{
+		if(checkInitialization(name))
+			return 1;
 	  constructValueToRegister(a);
 	  asmInstrunctions.push_back(new AsmInstruction("SUB", it->second));
 		return 0;
@@ -61,6 +64,8 @@ int Substractor::sub(string name, int a)
 	}
 	else
 	{
+		if(checkInitialization(name))
+			return 1;
 		constructValueToRegister(a);
 	  asmInstrunctions.push_back(new AsmInstruction("STORE", 0));
 		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second));
@@ -80,6 +85,8 @@ int Substractor::subge(string name, int a)
 	else
 	{
 		constructValueToRegister(a);
+		if(checkInitialization(name))
+			return 1;
 	  asmInstrunctions.push_back(new AsmInstruction("STORE", 0));
 		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second));
 		asmInstrunctions.push_back(new AsmInstruction("INC"));
@@ -104,6 +111,8 @@ int Substractor::sub(string name1, string name2)
 	}
 	else
 	{
+		if(checkInitialization(name1) || checkInitialization(name2))
+			return 1;
 	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second));
 	  asmInstrunctions.push_back(new AsmInstruction("SUB", it2->second));
 		return 0;
@@ -126,6 +135,8 @@ int Substractor::subge(string name1, string name2)
 	}
 	else
 	{
+		if(checkInitialization(name1) || checkInitialization(name2))
+			return 1;
 	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second));
 		asmInstrunctions.push_back(new AsmInstruction("INC"));
 	  asmInstrunctions.push_back(new AsmInstruction("SUB", it2->second));

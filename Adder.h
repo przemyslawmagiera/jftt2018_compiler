@@ -8,6 +8,7 @@ using namespace std;
 
 extern int constructValueToRegister(int value);
 extern void	undefinedVariableError(string varName);
+extern int	checkInitialization(string varName);
 extern map<string, int> memoryMap;
 extern vector<AsmInstruction*> asmInstrunctions;
 
@@ -43,6 +44,8 @@ int Adder::add(int a, string name)
 	}
 	else
 	{
+		if(checkInitialization(name))
+			return 1;
 	  constructValueToRegister(a);
 	  asmInstrunctions.push_back(new AsmInstruction("ADD", it->second));
 		return 0;
@@ -66,6 +69,8 @@ int Adder::add(string name1, string name2)
 	}
 	else
 	{
+		if(checkInitialization(name1) || checkInitialization(name2))
+			return 1;
 	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second));
 	  asmInstrunctions.push_back(new AsmInstruction("ADD", it2->second));
 		return 0;

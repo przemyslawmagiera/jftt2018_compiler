@@ -1,0 +1,77 @@
+VAR
+  i j n p k r q g l bug
+BEGIN
+  l := 0;
+  n := 10;
+  p := 0;
+  i := 0;
+  j := 0;
+  WHILE i < 3 DO
+      i := i + 1;
+      WRITE i;
+  ENDWHILE
+  WHILE j <= 10 DO
+      i := 2;
+      p := p + i;
+      j := j +1;
+  ENDWHILE
+  IF p = 22 THEN
+    WRITE 4;
+  ELSE
+    WRITE 999;
+  ENDIF
+
+  k := 4;
+  r := 0;
+  bug := 13;
+  WHILE k <= 10 DO
+    p := 0;
+    i := 0;
+    j := 0;
+    WHILE i < 3 DO
+        i := i + 1;
+        n := i + k;
+        WRITE n;
+    ENDWHILE
+    WHILE j <= 10 DO
+        i := 2;
+        p := p + i;
+        j := j +1;
+    ENDWHILE
+    IF p = 22 THEN
+      q := 0;
+      WHILE q <= k DO
+        r := r+1;
+        q := q+1;
+        g := 0;
+        WHILE g <= 5 DO
+          IF k > 2 THEN
+            l := l + 1;
+          ELSE
+            WRITE 997;
+          ENDIF
+          g := g +1;
+        ENDWHILE
+      ENDWHILE
+      n := 4 + k;
+      WRITE n;
+    ELSE
+      WRITE 998;
+    ENDIF
+    k := k+4;
+  ENDWHILE
+  WRITE bug;
+  IF r = 14 THEN
+    WRITE r;
+  ELSE
+    WRITE 996;
+  ENDIF
+
+  IF l = 84 THEN
+    WRITE 15;
+  ELSE
+    WRITE 995;
+  ENDIF
+
+  WRITE 0;
+END

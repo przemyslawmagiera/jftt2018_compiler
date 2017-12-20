@@ -75,10 +75,10 @@
 	#include "Adder.h"
 	#include "Substractor.h"
 	#include "Identifier.h"
-	#include "Condition.h"
 	#include <fstream>
 	#include <bitset>
 	#include <regex>
+	#include <algorithm>
 	extern "C" int yylex();
 	extern "C" int yyparse();
 	void yyerror (char const *);
@@ -87,7 +87,7 @@
 	int memory_pointer = 0;
 	int valueTakenFromIdentifier = 0;
 	int findVariableInMemory(std::string name);
-	void determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper,int gte);
+	int determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper,int gte);
 	int copyValueFromAnotherIdentifier(std::string from, std::string to);
 	int assignValueToIdentifier(std::string name, int value);
 	int constructValueToRegister(int value);
@@ -100,11 +100,16 @@
 	void printAsmInstructions();
 	int writeNumber(int number);
 	int writeIdentifier(std::string name);
+	void uninitializedVariableError(std::string varName);
+	int loadFromMemory(std::string name);
 	std::map<std::string, int> memoryMap;
 	std::vector<AsmInstruction*> asmInstrunctions;
 	std::stack<int> jzeroLinePointerStack;
+	std::stack<int> whileConditionPointerStack;
+	std::stack<int> whileJumpPointerStack;
+	std::vector<string> initializedVars;
 
-#line 108 "grammar.tab.c" /* yacc.c:339  */
+#line 113 "grammar.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -183,14 +188,14 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 42 "grammar.y" /* yacc.c:355  */
+#line 47 "grammar.y" /* yacc.c:355  */
 
 	char* string;
 	int integer;
 	//Identifier* identifier;
 	//Command* command;
 
-#line 194 "grammar.tab.c" /* yacc.c:355  */
+#line 199 "grammar.tab.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -207,7 +212,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 211 "grammar.tab.c" /* yacc.c:358  */
+#line 216 "grammar.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -449,16 +454,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  4
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   164
+#define YYLAST   147
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  47
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  13
+#define YYNNTS  15
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  36
+#define YYNRULES  38
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  87
+#define YYNSTATES  89
 
 /* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
    by yylex, with out-of-bounds checking.  */
@@ -506,12 +511,12 @@ static const yytype_uint8 yytranslate[] =
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_uint8 yyrline[] =
+static const yytype_uint16 yyrline[] =
 {
-       0,    94,    94,    99,   103,   104,   106,   107,   109,   132,
-     136,   132,   139,   140,   141,   142,   147,   161,   161,   175,
-     182,   183,   189,   194,   195,   196,   198,   209,   212,   218,
-     224,   230,   237,   240,   242,   243,   244
+       0,    99,    99,   104,   108,   109,   111,   112,   114,   138,
+     142,   138,   145,   147,   145,   160,   161,   162,   167,   181,
+     181,   195,   202,   203,   210,   215,   216,   217,   219,   232,
+     235,   242,   249,   256,   264,   267,   269,   270,   271
 };
 #endif
 
@@ -527,8 +532,8 @@ static const char *const yytname[] =
   "T_MOD", "'%'", "\"=\"", "\"<>\"", "\"<\"", "\"<=\"", "\">=\"", "\">\"",
   "\":=\"", "T_EL", "';'", "T_LBR", "'['", "T_RBR", "']'", "ERR",
   "$accept", "program", "vdeclarations", "commands", "command", "$@1",
-  "$@2", "innerIf", "$@3", "expression", "condition", "value",
-  "identifier", YY_NULLPTR
+  "$@2", "$@3", "$@4", "innerIf", "$@5", "expression", "condition",
+  "value", "identifier", YY_NULLPTR
 };
 #endif
 
@@ -545,10 +550,10 @@ static const yytype_uint16 yytoknum[] =
 };
 # endif
 
-#define YYPACT_NINF -40
+#define YYPACT_NINF -47
 
 #define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-40)))
+  (!!((Yystate) == (-47)))
 
 #define YYTABLE_NINF -1
 
@@ -557,17 +562,17 @@ static const yytype_uint16 yytoknum[] =
 
   /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
      STATE-NUM.  */
-static const yytype_int16 yypact[] =
+static const yytype_int8 yypact[] =
 {
-       8,   -40,     4,    -1,   -40,   -16,   137,    25,   -10,    13,
-      13,    26,    31,    13,     3,   -40,    -3,     0,    16,   -40,
-     -40,   126,   -40,    32,    22,     6,     7,   -40,   -40,    13,
-     -40,    10,    11,    37,    13,    13,    13,    13,    13,    13,
-     137,    13,   -40,   -40,    27,     2,   -40,   -40,   137,   -40,
-     -40,   -40,   -40,   -40,   -40,    83,    -5,   -40,    13,    13,
-      13,    13,    13,   137,   -40,    13,    13,   -40,   -40,   -40,
-     -40,   -40,    12,    39,    43,   -40,   -40,   -40,   137,   137,
-     137,    97,   112,   127,   -40,   -40,   -40
+       2,   -47,     4,    -1,   -47,   -32,   111,    30,    -4,    20,
+     -47,    35,    39,    20,     5,   -47,     8,     0,    26,   -47,
+     -47,   109,   -47,    20,    36,     6,     9,   -47,   -47,    20,
+     -47,    11,    15,    58,    20,    20,    20,    20,    20,    20,
+     -47,    20,   -47,   -47,    40,   110,   -47,   -47,   111,   -47,
+     -47,   -47,   -47,   -47,   -47,    60,    -3,   -47,    20,    20,
+      20,    20,    20,   111,   111,    20,    20,   -47,   -47,   -47,
+     -47,   -47,    22,     7,    68,    69,   -47,   -47,   -47,   -47,
+     111,   111,   111,    33,    86,   101,   -47,   -47,   -47
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -575,29 +580,29 @@ static const yytype_int16 yypact[] =
      means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       0,     5,     0,     0,     1,     3,     0,     0,    34,     0,
-       0,     0,     0,     0,     0,     7,     0,     0,     0,    32,
-       9,     0,    33,     0,     0,     0,     0,     2,     6,     0,
+       0,     5,     0,     0,     1,     3,     0,     0,    36,     0,
+      12,     0,     0,     0,     0,     7,     0,     0,     0,    34,
+       9,     0,    35,     0,     0,     0,     0,     2,     6,     0,
        4,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,    15,    16,     0,    20,    36,    35,     0,    26,
-      27,    28,    30,    31,    29,     0,     0,     8,     0,     0,
-       0,     0,     0,    10,    12,     0,     0,    21,    22,    23,
-      24,    25,     0,     0,     0,    17,    19,    11,     0,     0,
-       0,     0,     0,     0,    13,    14,    18
+      13,     0,    17,    18,     0,    22,    38,    37,     0,    28,
+      29,    30,    32,    33,    31,     0,     0,     8,     0,     0,
+       0,     0,     0,    10,     0,     0,     0,    23,    24,    25,
+      26,    27,     0,     0,     0,     0,    19,    21,    11,    14,
+       0,     0,     0,     0,     0,     0,    15,    16,    20
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -40,   -40,   -40,   -39,   -12,   -40,   -40,   -40,   -40,   -40,
-      40,    24,    -6
+     -47,   -47,   -47,   -46,   -13,   -47,   -47,   -47,   -47,   -47,
+     -47,   -47,    61,    27,    -6
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     2,     3,    14,    15,    33,    72,    77,    80,    44,
-      20,    21,    22
+      -1,     2,     3,    14,    15,    33,    72,    23,    55,    78,
+      82,    44,    20,    21,    22
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -605,44 +610,40 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_uint8 yytable[] =
 {
-      16,    55,    28,     5,     4,     6,    25,     8,    16,    63,
-      27,     9,    65,     1,    66,    10,    19,     8,    11,    31,
-      32,    75,    76,    12,    13,    58,     7,    59,    17,    60,
-      24,    61,    18,    62,    16,     8,    29,    26,    41,    81,
-      82,    83,    16,    28,    30,    40,    42,    43,    48,    16,
-      23,    28,    78,    45,    46,    47,    79,    16,    49,    50,
-      51,    52,    53,    54,     0,    56,     0,    57,     0,    28,
-      28,    28,    16,    16,    16,    16,    16,    16,     0,     0,
-       0,     0,    67,    68,    69,    70,    71,     8,     0,    73,
-      74,     9,     0,     0,     0,    10,     0,    64,    11,     0,
-       0,     8,     0,    12,    13,     9,     0,     0,     0,    10,
-       0,     0,    11,     0,     0,    84,     8,    12,    13,     0,
-       9,     0,     0,     0,    10,     0,     0,    11,     0,     0,
-      85,     8,    12,    13,     0,     9,     0,    86,     0,    10,
-       0,     8,    11,     0,     0,     9,     0,    12,    13,    10,
-       0,     0,    11,     0,     0,     0,     0,    12,    13,    34,
-      35,    36,    37,    38,    39
+      16,    28,    63,     5,     4,     6,    25,     1,    16,     8,
+       7,     8,    27,     9,    65,     9,    66,    10,    73,    10,
+      11,    79,    11,    19,     8,    12,    13,    12,    13,    31,
+      32,    76,    77,    17,    83,    84,    85,     8,    18,    24,
+      26,     9,    16,     8,    30,    10,    42,    29,    11,    43,
+      28,    86,    41,    12,    13,    46,    45,    16,    16,    47,
+      28,    49,    50,    51,    52,    53,    54,    16,    56,    48,
+      28,    28,    28,    64,    16,    16,    16,    16,    16,    16,
+      57,    80,    81,     0,    40,    67,    68,    69,    70,    71,
+       8,     0,    74,    75,     9,     0,     0,     0,    10,     0,
+       0,    11,     0,     0,    87,     8,    12,    13,     0,     9,
+       0,    88,     0,    10,     0,     8,    11,     0,     0,     9,
+       0,    12,    13,    10,     0,     0,    11,     0,     0,     0,
+       0,    12,    13,    58,     0,    59,     0,    60,     0,    61,
+       0,    62,    34,    35,    36,    37,    38,    39
 };
 
 static const yytype_int8 yycheck[] =
 {
-       6,    40,    14,     4,     0,     6,    12,     4,    14,    48,
-       7,     8,    17,     5,    19,    12,     3,     4,    15,     3,
-       4,     9,    10,    20,    21,    23,    42,    25,     3,    27,
-       4,    29,    42,    31,    40,     4,    39,    13,    16,    78,
-      79,    80,    48,    55,    44,    13,    40,    40,    11,    55,
-      10,    63,    13,    29,    44,    44,    13,    63,    34,    35,
-      36,    37,    38,    39,    -1,    41,    -1,    40,    -1,    81,
-      82,    83,    78,    79,    80,    81,    82,    83,    -1,    -1,
-      -1,    -1,    58,    59,    60,    61,    62,     4,    -1,    65,
-      66,     8,    -1,    -1,    -1,    12,    -1,    14,    15,    -1,
-      -1,     4,    -1,    20,    21,     8,    -1,    -1,    -1,    12,
-      -1,    -1,    15,    -1,    -1,    18,     4,    20,    21,    -1,
-       8,    -1,    -1,    -1,    12,    -1,    -1,    15,    -1,    -1,
-      18,     4,    20,    21,    -1,     8,    -1,    10,    -1,    12,
-      -1,     4,    15,    -1,    -1,     8,    -1,    20,    21,    12,
-      -1,    -1,    15,    -1,    -1,    -1,    -1,    20,    21,    33,
-      34,    35,    36,    37,    38
+       6,    14,    48,     4,     0,     6,    12,     5,    14,     4,
+      42,     4,     7,     8,    17,     8,    19,    12,    64,    12,
+      15,    14,    15,     3,     4,    20,    21,    20,    21,     3,
+       4,     9,    10,     3,    80,    81,    82,     4,    42,     4,
+      13,     8,    48,     4,    44,    12,    40,    39,    15,    40,
+      63,    18,    16,    20,    21,    44,    29,    63,    64,    44,
+      73,    34,    35,    36,    37,    38,    39,    73,    41,    11,
+      83,    84,    85,    13,    80,    81,    82,    83,    84,    85,
+      40,    13,    13,    -1,    23,    58,    59,    60,    61,    62,
+       4,    -1,    65,    66,     8,    -1,    -1,    -1,    12,    -1,
+      -1,    15,    -1,    -1,    18,     4,    20,    21,    -1,     8,
+      -1,    10,    -1,    12,    -1,     4,    15,    -1,    -1,     8,
+      -1,    20,    21,    12,    -1,    -1,    15,    -1,    -1,    -1,
+      -1,    20,    21,    23,    -1,    25,    -1,    27,    -1,    29,
+      -1,    31,    33,    34,    35,    36,    37,    38
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
@@ -650,32 +651,32 @@ static const yytype_int8 yycheck[] =
 static const yytype_uint8 yystos[] =
 {
        0,     5,    48,    49,     0,     4,     6,    42,     4,     8,
-      12,    15,    20,    21,    50,    51,    59,     3,    42,     3,
-      57,    58,    59,    57,     4,    59,    58,     7,    51,    39,
+      12,    15,    20,    21,    50,    51,    61,     3,    42,     3,
+      59,    60,    61,    54,     4,    61,    60,     7,    51,    39,
       44,     3,     4,    52,    33,    34,    35,    36,    37,    38,
-      13,    16,    40,    40,    56,    58,    44,    44,    11,    58,
-      58,    58,    58,    58,    58,    50,    58,    40,    23,    25,
-      27,    29,    31,    50,    14,    17,    19,    58,    58,    58,
-      58,    58,    53,    58,    58,     9,    10,    54,    13,    13,
-      55,    50,    50,    50,    18,    18,    10
+      59,    16,    40,    40,    58,    60,    44,    44,    11,    60,
+      60,    60,    60,    60,    60,    55,    60,    40,    23,    25,
+      27,    29,    31,    50,    13,    17,    19,    60,    60,    60,
+      60,    60,    53,    50,    60,    60,     9,    10,    56,    14,
+      13,    13,    57,    50,    50,    50,    18,    18,    10
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
        0,    47,    48,    49,    49,    49,    50,    50,    51,    52,
-      53,    51,    51,    51,    51,    51,    51,    55,    54,    54,
-      56,    56,    56,    56,    56,    56,    57,    57,    57,    57,
-      57,    57,    58,    58,    59,    59,    59
+      53,    51,    54,    55,    51,    51,    51,    51,    51,    57,
+      56,    56,    58,    58,    58,    58,    58,    58,    59,    59,
+      59,    59,    59,    59,    60,    60,    61,    61,    61
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
        0,     2,     5,     2,     5,     0,     2,     1,     4,     0,
-       0,     7,     5,     9,     9,     3,     3,     0,     4,     1,
-       1,     3,     3,     3,     3,     3,     3,     3,     3,     3,
-       3,     3,     1,     1,     1,     4,     4
+       0,     7,     0,     0,     7,     9,     9,     3,     3,     0,
+       4,     1,     1,     3,     3,     3,     3,     3,     3,     3,
+       3,     3,     3,     3,     1,     1,     1,     4,     4
 };
 
 
@@ -1352,41 +1353,42 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 94 "grammar.y" /* yacc.c:1646  */
+#line 99 "grammar.y" /* yacc.c:1646  */
     {
 								asmInstrunctions.push_back(new AsmInstruction("HALT"));
 								printAsmInstructions();
 								}
-#line 1361 "grammar.tab.c" /* yacc.c:1646  */
+#line 1362 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 99 "grammar.y" /* yacc.c:1646  */
+#line 104 "grammar.y" /* yacc.c:1646  */
     {
 								if(initializeIdentifier((yyvsp[0].string)))
 										return 1;
 								}
-#line 1370 "grammar.tab.c" /* yacc.c:1646  */
+#line 1371 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 109 "grammar.y" /* yacc.c:1646  */
+#line 114 "grammar.y" /* yacc.c:1646  */
     {
 									//printf("debug exp: %s \n", $3);
+									initializedVars.push_back((yyvsp[-3].string));
 									string exp((yyvsp[-1].string));
 									if(std::regex_match((yyvsp[-1].string), std::regex("[0-9]+")))
 									{
 										if(assignValueToIdentifier((yyvsp[-3].string), atoi((yyvsp[-1].string))))
 											return 1;
 									}
-								else if(exp == "OEX")
-										{
+									else if(exp == "OEX")
+									{
 										//printf("debug identifier %s \n", $1);
 										int place = findVariableInMemory((yyvsp[-3].string));
 										if(place == -1)
 											return 1;
 										asmInstrunctions.push_back(new AsmInstruction("STORE", place));
-										}
+									}
 									else
 									{
 										//printf("debug identifier %s \n", $1);
@@ -1394,39 +1396,71 @@ yyreduce:
 											return 1;
 									}
 								}
-#line 1398 "grammar.tab.c" /* yacc.c:1646  */
+#line 1400 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 132 "grammar.y" /* yacc.c:1646  */
+#line 138 "grammar.y" /* yacc.c:1646  */
     {
 								//printf("pushneem wlasnie: %d",asmInstrunctions.size());
 								jzeroLinePointerStack.push(asmInstrunctions.size());
 							  asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
 							}
-#line 1408 "grammar.tab.c" /* yacc.c:1646  */
+#line 1410 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 136 "grammar.y" /* yacc.c:1646  */
+#line 142 "grammar.y" /* yacc.c:1646  */
     {
 
 							}
-#line 1416 "grammar.tab.c" /* yacc.c:1646  */
+#line 1418 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
-  case 15:
-#line 142 "grammar.y" /* yacc.c:1646  */
+  case 12:
+#line 145 "grammar.y" /* yacc.c:1646  */
+    {
+								whileConditionPointerStack.push(asmInstrunctions.size());
+							}
+#line 1426 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 13:
+#line 147 "grammar.y" /* yacc.c:1646  */
+    {
+								whileJumpPointerStack.push(asmInstrunctions.size());
+								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
+
+							}
+#line 1436 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 14:
+#line 151 "grammar.y" /* yacc.c:1646  */
+    {
+								int whileConditionStart = whileConditionPointerStack.top();
+								whileConditionPointerStack.pop();
+								asmInstrunctions.push_back(new AsmInstruction("ZERO"));
+								asmInstrunctions.push_back(new AsmInstruction("JZERO", whileConditionStart));
+								int whileJump = whileJumpPointerStack.top();
+								whileJumpPointerStack.pop();
+								asmInstrunctions[whileJump]->arg = asmInstrunctions.size();
+							}
+#line 1450 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 17:
+#line 162 "grammar.y" /* yacc.c:1646  */
     {
 							//wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
 								if(readToIdentifier((yyvsp[-1].string)))
 									return 1;
 							}
-#line 1426 "grammar.tab.c" /* yacc.c:1646  */
+#line 1460 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
-  case 16:
-#line 147 "grammar.y" /* yacc.c:1646  */
+  case 18:
+#line 167 "grammar.y" /* yacc.c:1646  */
     {
 								if(std::regex_match((yyvsp[-1].string), std::regex("[0-9]+")))
 								{
@@ -1440,11 +1474,11 @@ yyreduce:
 								}
 
 							}
-#line 1444 "grammar.tab.c" /* yacc.c:1646  */
+#line 1478 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
-  case 17:
-#line 161 "grammar.y" /* yacc.c:1646  */
+  case 19:
+#line 181 "grammar.y" /* yacc.c:1646  */
     {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
@@ -1454,178 +1488,185 @@ yyreduce:
 								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
 							}
-#line 1458 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 18:
-#line 169 "grammar.y" /* yacc.c:1646  */
-    {
-								int jzero = jzeroLinePointerStack.top();
-								jzeroLinePointerStack.pop();
-								//printf("scionglem wlasnie: %d",jzero);
-								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
-							}
-#line 1469 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 19:
-#line 175 "grammar.y" /* yacc.c:1646  */
-    {
-								int jzero = jzeroLinePointerStack.top();
-								jzeroLinePointerStack.pop();
-								//printf("scionglem wlasnie: %d",jzero);
-								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
-							}
-#line 1480 "grammar.tab.c" /* yacc.c:1646  */
+#line 1492 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 182 "grammar.y" /* yacc.c:1646  */
-    {(yyval.string) = (yyvsp[0].string);}
-#line 1486 "grammar.tab.c" /* yacc.c:1646  */
+#line 189 "grammar.y" /* yacc.c:1646  */
+    {
+								int jzero = jzeroLinePointerStack.top();
+								jzeroLinePointerStack.pop();
+								//printf("scionglem wlasnie: %d",jzero);
+								asmInstrunctions[jzero]->arg = asmInstrunctions.size();
+							}
+#line 1503 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 183 "grammar.y" /* yacc.c:1646  */
+#line 195 "grammar.y" /* yacc.c:1646  */
     {
-								//printf("debug value>num :%s + %s\n",$1, $3);
-								determineAndExecuteExpressionOperation((yyvsp[-2].string),(yyvsp[0].string),"+",0);
-								char f[4] = "OEX";
-								(yyval.string) = f;
+								int jzero = jzeroLinePointerStack.top();
+								jzeroLinePointerStack.pop();
+								//printf("scionglem wlasnie: %d",jzero);
+								asmInstrunctions[jzero]->arg = asmInstrunctions.size();
 							}
-#line 1497 "grammar.tab.c" /* yacc.c:1646  */
+#line 1514 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 189 "grammar.y" /* yacc.c:1646  */
+#line 202 "grammar.y" /* yacc.c:1646  */
+    {(yyval.string) = (yyvsp[0].string);}
+#line 1520 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 23:
+#line 203 "grammar.y" /* yacc.c:1646  */
+    {
+								//printf("debug value>num :%s + %s\n",$1, $3);
+								if(determineAndExecuteExpressionOperation((yyvsp[-2].string),(yyvsp[0].string),"+",0))
+									return 1;
+								char f[4] = "OEX";
+								(yyval.string) = f;
+							}
+#line 1532 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 24:
+#line 210 "grammar.y" /* yacc.c:1646  */
     {
 								determineAndExecuteExpressionOperation((yyvsp[-2].string),(yyvsp[0].string),"-",0);
 								char f[4] = "OEX";
 								(yyval.string) = f;
 							}
-#line 1507 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 23:
-#line 194 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1513 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 24:
-#line 195 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1519 "grammar.tab.c" /* yacc.c:1646  */
+#line 1542 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 196 "grammar.y" /* yacc.c:1646  */
+#line 215 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1525 "grammar.tab.c" /* yacc.c:1646  */
+#line 1548 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 198 "grammar.y" /* yacc.c:1646  */
+#line 216 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1554 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 27:
+#line 217 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1560 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 28:
+#line 219 "grammar.y" /* yacc.c:1646  */
     {
 								string a((yyvsp[-2].string));
 								string b((yyvsp[0].string));
-								determineAndExecuteExpressionOperation(a,b,"-", 0);
+								if(determineAndExecuteExpressionOperation(a,b,"-", 0))
+									return 1;
 								asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
-								determineAndExecuteExpressionOperation(b,a,"-", 0);
+								if(determineAndExecuteExpressionOperation(b,a,"-", 0))
+									return 1;
 								asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
 								constructValueToRegister(1);
 								asmInstrunctions.push_back(new AsmInstruction("SUB", 5));
 								asmInstrunctions.push_back(new AsmInstruction("SUB", 6));
 							}
-#line 1541 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 27:
-#line 209 "grammar.y" /* yacc.c:1646  */
-    {
-
-							}
-#line 1549 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 28:
-#line 212 "grammar.y" /* yacc.c:1646  */
-    {
-								string a((yyvsp[-2].string));
-								string b((yyvsp[0].string));
-							  determineAndExecuteExpressionOperation(b,a,"-", 0);
-								(yyval.string) = (yyvsp[-1].string);
-							}
-#line 1560 "grammar.tab.c" /* yacc.c:1646  */
+#line 1578 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 218 "grammar.y" /* yacc.c:1646  */
+#line 232 "grammar.y" /* yacc.c:1646  */
     {
-								string a((yyvsp[-2].string));
-								string b((yyvsp[0].string));
-							  determineAndExecuteExpressionOperation(a,b,"-", 0);
-								(yyval.string) = (yyvsp[-1].string);
+
 							}
-#line 1571 "grammar.tab.c" /* yacc.c:1646  */
+#line 1586 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 224 "grammar.y" /* yacc.c:1646  */
+#line 235 "grammar.y" /* yacc.c:1646  */
     {
 								string a((yyvsp[-2].string));
 								string b((yyvsp[0].string));
-							  determineAndExecuteExpressionOperation(b,a,"-", 1);
+							  if(determineAndExecuteExpressionOperation(b,a,"-", 0))
+									return 1;
 								(yyval.string) = (yyvsp[-1].string);
 							}
-#line 1582 "grammar.tab.c" /* yacc.c:1646  */
+#line 1598 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 230 "grammar.y" /* yacc.c:1646  */
+#line 242 "grammar.y" /* yacc.c:1646  */
     {
 								string a((yyvsp[-2].string));
 								string b((yyvsp[0].string));
-							  determineAndExecuteExpressionOperation(a,b,"-", 1);
+							  if(determineAndExecuteExpressionOperation(a,b,"-", 0))
+									return 1;
 								(yyval.string) = (yyvsp[-1].string);
 							}
-#line 1593 "grammar.tab.c" /* yacc.c:1646  */
+#line 1610 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 237 "grammar.y" /* yacc.c:1646  */
-    { (yyval.string) = (yyvsp[0].string);
-									//printf("debug value>num :%s\n", $1);
-								}
-#line 1601 "grammar.tab.c" /* yacc.c:1646  */
+#line 249 "grammar.y" /* yacc.c:1646  */
+    {
+								string a((yyvsp[-2].string));
+								string b((yyvsp[0].string));
+							  if(determineAndExecuteExpressionOperation(b,a,"-", 1))
+									return 1;
+								(yyval.string) = (yyvsp[-1].string);
+							}
+#line 1622 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 240 "grammar.y" /* yacc.c:1646  */
-    {(yyval.string) = (yyvsp[0].string);}
-#line 1607 "grammar.tab.c" /* yacc.c:1646  */
+#line 256 "grammar.y" /* yacc.c:1646  */
+    {
+								string a((yyvsp[-2].string));
+								string b((yyvsp[0].string));
+							  if(determineAndExecuteExpressionOperation(a,b,"-", 1))
+									return 1;
+								(yyval.string) = (yyvsp[-1].string);
+							}
+#line 1634 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 242 "grammar.y" /* yacc.c:1646  */
-    {(yyval.string) = (yyvsp[0].string);}
-#line 1613 "grammar.tab.c" /* yacc.c:1646  */
+#line 264 "grammar.y" /* yacc.c:1646  */
+    { (yyval.string) = (yyvsp[0].string);
+									//printf("debug value>num :%s\n", $1);
+								}
+#line 1642 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 243 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1619 "grammar.tab.c" /* yacc.c:1646  */
+#line 267 "grammar.y" /* yacc.c:1646  */
+    {(yyval.string) = (yyvsp[0].string);}
+#line 1648 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 244 "grammar.y" /* yacc.c:1646  */
+#line 269 "grammar.y" /* yacc.c:1646  */
+    {(yyval.string) = (yyvsp[0].string);}
+#line 1654 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 37:
+#line 270 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1625 "grammar.tab.c" /* yacc.c:1646  */
+#line 1660 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 38:
+#line 271 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1666 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1629 "grammar.tab.c" /* yacc.c:1646  */
+#line 1670 "grammar.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1853,7 +1894,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 245 "grammar.y" /* yacc.c:1906  */
+#line 272 "grammar.y" /* yacc.c:1906  */
 
 
 /********************************METHODS***********************************/
@@ -1876,7 +1917,7 @@ int findVariableInMemory(string name)
 	}
 }
 //gte sluzy do tego zeby zrobic trik ze zwiekszeniem b przy porownaniu
-void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, int gte)
+int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, int gte)
 {
 	//printf("debug oper: %s \n", oper.c_str());
 	int arg1Num = regex_match(arg1, std::regex("[0-9]+"));
@@ -1885,47 +1926,60 @@ void determineAndExecuteExpressionOperation(string arg1,string arg2,string oper,
 	if(oper == "+")
 	{
 		if(arg1Num && arg2Num)
-			Adder::add(atoi(arg1.c_str()), atoi(arg2.c_str()));
+			if(Adder::add(atoi(arg1.c_str()), atoi(arg2.c_str())))
+				return 1;
 		else if(!arg1Num && arg2Num)
-			Adder::add(atoi(arg2.c_str()), arg1);
+			if(Adder::add(atoi(arg2.c_str()), arg1))
+				return 1;
 		else if(arg1Num && !arg2Num)
 		{
-			Adder::add(atoi(arg1.c_str()), arg2);
+			if(Adder::add(atoi(arg1.c_str()), arg2))
+				return 1;
 		}
 		else if(!arg1Num && !arg2Num)
-			Adder::add(arg1,arg2);
+			if(Adder::add(arg1,arg2))
+				return 1;
 	}
 	else if(oper == "-")
 	{
 		if(arg1Num && arg2Num)
 		{
 			if(gte)
-				Substractor::sub(atoi(arg1.c_str())+1, atoi(arg2.c_str()));
+				if(Substractor::sub(atoi(arg1.c_str())+1, atoi(arg2.c_str())))
+					return 1;
 			else
-				Substractor::sub(atoi(arg1.c_str()), atoi(arg2.c_str()));
+				if(Substractor::sub(atoi(arg1.c_str()), atoi(arg2.c_str())))
+					return 1;
 		}
 		else if(!arg1Num && arg2Num)
 		{
 			if(gte)
-				Substractor::subge(arg1, atoi(arg2.c_str()));
+				if(Substractor::subge(arg1, atoi(arg2.c_str())))
+					return 1;
 			else
-				Substractor::sub(arg1, atoi(arg2.c_str()));
+				if(Substractor::sub(arg1, atoi(arg2.c_str())))
+					return 1;
 		}
 		else if(arg1Num && !arg2Num)
 		{
 			if(gte)
-				Substractor::sub(atoi(arg1.c_str())+1, arg2);
+				if(Substractor::sub(atoi(arg1.c_str())+1, arg2))
+					return 1;
 			else
-				Substractor::sub(atoi(arg1.c_str()), arg2);
+				if(Substractor::sub(atoi(arg1.c_str()), arg2))
+					return 1;
 		}
 		else if(!arg1Num && !arg2Num)
 		{
 			if(gte)
-				Substractor::subge(arg1,arg2);
+				if(Substractor::subge(arg1,arg2))
+					return 1;
 			else
-				Substractor::sub(arg1,arg2);
+				if(Substractor::sub(arg1,arg2))
+					return 1;
 		}
 	}
+	return 0;
 }
 
 int writeNumber(int number)
@@ -1945,6 +1999,8 @@ int writeIdentifier(string name)
 	}
 	else
 	{
+		if(checkInitialization(name))
+			return 1;
 		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second));
 		asmInstrunctions.push_back(new AsmInstruction("PUT"));
 		return 0;
@@ -1968,22 +2024,6 @@ string decToBin(int number)
     return result;
 }
 
-int copyValueFromMemory(int from, std::string to)
-{
-	map<string, int>::iterator itTo = memoryMap.find(to);
-	if (itTo == memoryMap.end())
-	{
-		undefinedVariableError(to);
-		return 1;
-	}
-	else
-	{
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", from));
-		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second));
-	}
-	return 0;
-}
-
 int copyValueFromAnotherIdentifier(std::string from, std::string to)
 {
 	map<string, int>::iterator itFrom = memoryMap.find(from);
@@ -2000,6 +2040,8 @@ int copyValueFromAnotherIdentifier(std::string from, std::string to)
 	}
 	else
 	{
+		if(checkInitialization(from))
+			return 1;
 		asmInstrunctions.push_back(new AsmInstruction("LOAD", itFrom->second));
 		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second));
 	}
@@ -2062,6 +2104,16 @@ int readToIdentifier(string name)
 	return storeIdentifier(name);
 }
 
+int checkInitialization(string name)
+{
+	if(find(initializedVars.begin(), initializedVars.end(), name) != initializedVars.end())
+	{
+		return 0;
+	}
+	uninitializedVariableError(name);
+	return 1;
+}
+
 int storeIdentifier(string name)
 {
 	map<string, int>::iterator it = memoryMap.find(name);
@@ -2102,6 +2154,16 @@ void undefinedVariableError(string varName)
 	free(error);
 }
 
+void uninitializedVariableError(string varName)
+{
+	char* error =(char*) malloc(100);
+	error = strcpy(error, "Variable '");
+	error = strcat(error,varName.c_str());
+	error = strcat(error,"' uninitialized.");
+	yyerror(error);
+	free(error);
+}
+
 void numberTooBigError(string varName)
 {
 	char* error =(char*) malloc(100);
@@ -2114,14 +2176,7 @@ void numberTooBigError(string varName)
 
 void yyerror (char const *s)
 {
-	if(strncmp(s," syntax",6))
-	{
-		printf("Error at line:%d near expression '%s', detail : %s \n", yylineno, yytext, "unrecognised expression");
-	}
-	else
-	{
 	printf("Error at line:%d near expression '%s', detail : %s \n", yylineno, yytext, s);
-	}
 }
 
 
