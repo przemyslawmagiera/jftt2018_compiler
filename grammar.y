@@ -300,57 +300,57 @@ int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, 
 	if(oper == "+")
 	{
 		if(arg1Num && arg2Num)
-			if(Adder::add(atoi(arg1.c_str()), atoi(arg2.c_str())))
-				return 1;
+		{	if(Adder::add(atoi(arg1.c_str()), atoi(arg2.c_str())))
+				return 1;}
 		else if(!arg1Num && arg2Num)
-			if(Adder::add(atoi(arg2.c_str()), arg1))
-				return 1;
+		{	if(Adder::add(atoi(arg2.c_str()), arg1))
+				return 1;}
 		else if(arg1Num && !arg2Num)
 		{
 			if(Adder::add(atoi(arg1.c_str()), arg2))
 				return 1;
 		}
 		else if(!arg1Num && !arg2Num)
-			if(Adder::add(arg1,arg2))
-				return 1;
+		{	if(Adder::add(arg1,arg2))
+				return 1;}
 	}
 	else if(oper == "-")
 	{
 		if(arg1Num && arg2Num)
 		{
 			if(gte)
-				if(Substractor::sub(atoi(arg1.c_str())+1, atoi(arg2.c_str())))
-					return 1;
+			{	if(Substractor::sub(atoi(arg1.c_str())+1, atoi(arg2.c_str())))
+					return 1;}
 			else
-				if(Substractor::sub(atoi(arg1.c_str()), atoi(arg2.c_str())))
-					return 1;
+			{	if(Substractor::sub(atoi(arg1.c_str()), atoi(arg2.c_str())))
+					return 1;}
 		}
 		else if(!arg1Num && arg2Num)
 		{
 			if(gte)
-				if(Substractor::subge(arg1, atoi(arg2.c_str())))
-					return 1;
+			{	if(Substractor::subge(arg1, atoi(arg2.c_str())))
+					return 1;}
 			else
-				if(Substractor::sub(arg1, atoi(arg2.c_str())))
-					return 1;
+				{if(Substractor::sub(arg1, atoi(arg2.c_str())))
+					return 1;}
 		}
 		else if(arg1Num && !arg2Num)
 		{
 			if(gte)
-				if(Substractor::sub(atoi(arg1.c_str())+1, arg2))
-					return 1;
+			{	if(Substractor::sub(atoi(arg1.c_str())+1, arg2))
+					return 1;}
 			else
-				if(Substractor::sub(atoi(arg1.c_str()), arg2))
-					return 1;
+			{	if(Substractor::sub(atoi(arg1.c_str()), arg2))
+					return 1;}
 		}
 		else if(!arg1Num && !arg2Num)
 		{
 			if(gte)
-				if(Substractor::subge(arg1,arg2))
-					return 1;
+			{	if(Substractor::subge(arg1,arg2))
+					return 1;}
 			else
-				if(Substractor::sub(arg1,arg2))
-					return 1;
+			{	if(Substractor::sub(arg1,arg2))
+					return 1;}
 		}
 	}
 	return 0;
