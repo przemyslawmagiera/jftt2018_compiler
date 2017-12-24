@@ -120,7 +120,8 @@ commands			:	commands command
 
 command	      : identifier T_ASG expression T_EL {
 									//printf("debug exp: %s \n", $3);
-									initializedVars.push_back($1);
+									if($1->type == 1)
+										initializedVars.push_back($1->name);
 									string exp($3);
 									if(std::regex_match($3, std::regex("[0-9]+")))
 									{

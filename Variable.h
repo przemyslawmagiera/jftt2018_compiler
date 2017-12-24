@@ -7,13 +7,14 @@ class Variable
 {
 	public:
 		long long value;
+    long long index;
     string name;
 		int type;
 		Variable(string, int);
 		Variable(long long);
 };
 
-Variable::Variable(string name, int type)
+Variable::Variable(string name, int type, long long index)
 {
 	this->type = type;
 	this->name = name;
