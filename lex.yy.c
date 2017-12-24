@@ -2195,14 +2195,15 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 48 "grammar.y" /* yacc.c:1909  */
+#line 50 "grammar.y" /* yacc.c:1909  */
 
 	char* string;
 	int integer;
+	Variable* variable;
 	//Identifier* identifier;
 	//Command* command;
 
-#line 100 "grammar.tab.h" /* yacc.c:1909  */
+#line 101 "grammar.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

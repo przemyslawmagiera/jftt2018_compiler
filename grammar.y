@@ -7,6 +7,7 @@
 	#include <map>
 	#include <vector>
 	#include "MemoryItem.h"
+	#include "Variable.h"
 	#include "AsmInstruction.h"
 	#include "Adder.h"
 	#include "Substractor.h"
@@ -28,6 +29,7 @@
 	int assignValueToIdentifier(std::string name, int value);
 	int constructValueToRegister(int value);
 	void undefinedVariableError(std::string varName);
+	void typeMismatchError(std::string varName);
 	int storeIdentifier(std::string name);
 	void numberTooBigError(std::string varName);
 	void printAsmInstructions();
@@ -48,13 +50,14 @@
 %union {
 	char* string;
 	int integer;
+	Variable* variable;
 	//Identifier* identifier;
 	//Command* command;
 };
 
-%type <string> value
+%type <variable> value
 %type <string> expression
-%type<string> identifier
+%type<variable> identifier
 %type<string> condition
 
 %token <string> num
@@ -280,10 +283,87 @@ identifier:   	PID {$$ = $1;}
 using namespace std;
 
 #define OPERATION_STORING_PLACE 1;
+#define ARRAY_BUFFER_STORING_PLACE_1 2;
+#define ARRAY_BUFFER_STORING_PLACE_2 3;
+#define ARRAY_BUFFER_STORING_PLACE_3 4;
 
-int loadToAccumulator(string var)
+//jeśli wywołasz tablice z indexem -1 (takim do zmiennych) to rzuć błąd
+int loadVariableToAccumulator(string name, string index)
 {
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
+	if(checkInitialization(name))
+		return 1;
+	if(it == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return 1;
+	}
+	else if(it->second->array == 0 && index == -1)
+	{
+		if(checkInitialization(name))
+			return 1;
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
+		return 0;
+	}
+	else if(it->second->array == 1 && index >= 0)
+	{
+		if(regex_match(index, regex("[0-9]+")))
+		{
+			constructValueToRegister(atoi(index));
+		}
+		else
+		{
+			loadVariableToAccumulator(index, -1);
+		}
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
+		asmInstrunctions.push_back(new AsmInstruction("ADD", ARRAY_BUFFER_STORING_PLACE_1));
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
+		asmInstrunctions.push_back(new AsmInstruction("LOADI", ARRAY_BUFFER_STORING_PLACE_1));
+		return 0;
+	}
+	else
+	{
+		typeMismatchError(name);
+		return 1;
+	}
+}
+
+int copyValueFromAnotherIdentifier(std::string from, std::string to)
+{
+	map<string, MemoryItem*>::iterator itFrom = memoryMap.find(from);
+	map<string, MemoryItem*>::iterator itTo = memoryMap.find(to);
+	if(itFrom == memoryMap.end())
+	{
+		undefinedVariableError(from);
+		return 1;
+	}
+	else if (itTo == memoryMap.end())
+	{
+		undefinedVariableError(to);
+		return 1;
+	}
+	else
+	{
+		if(checkInitialization(from))
+			return 1;
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", itFrom->second->cell));
+		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second->cell));
+	}
 	return 0;
+}
+
+int assignValueToIdentifier(string name, int value)
+{
+	if(constructValueToRegister(value))
+	{
+		numberTooBigError(name);
+		return 1;
+	}
+	else
+	{
+		return storeIdentifier(name);
+	}
 }
 
 int findVariableInMemory(string name)
@@ -407,43 +487,6 @@ string decToBin(int number)
     return result;
 }
 
-int copyValueFromAnotherIdentifier(std::string from, std::string to)
-{
-	map<string, MemoryItem*>::iterator itFrom = memoryMap.find(from);
-	map<string, MemoryItem*>::iterator itTo = memoryMap.find(to);
-	if(itFrom == memoryMap.end())
-	{
-		undefinedVariableError(from);
-		return 1;
-	}
-	else if (itTo == memoryMap.end())
-	{
-		undefinedVariableError(to);
-		return 1;
-	}
-	else
-	{
-		if(checkInitialization(from))
-			return 1;
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", itFrom->second->cell));
-		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second->cell));
-	}
-	return 0;
-}
-
-int assignValueToIdentifier(string name, int value)
-{
-	if(constructValueToRegister(value))
-	{
-		numberTooBigError(name);
-		return 1;
-	}
-	else
-	{
-		return storeIdentifier(name);
-	}
-}
-
 int constructValueToRegister(int value)
 {
 	string valueBin = decToBin(value);
@@ -531,6 +574,16 @@ void printAsmInstructions()
 }
 
 /*******************ERROR HANDLING*********************************/
+
+void typeMismatchError(string varName)
+{
+	char* error =(char*) malloc(100);
+	error = strcpy(error, "Incorrect call to '");
+	error = strcat(error,varName.c_str());
+	error = strcat(error,"' variable. Type mismatch.");
+	yyerror(error);
+	free(error);
+}
 
 void undefinedVariableError(string varName)
 {

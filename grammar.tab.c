@@ -72,6 +72,7 @@
 	#include <map>
 	#include <vector>
 	#include "MemoryItem.h"
+	#include "Variable.h"
 	#include "AsmInstruction.h"
 	#include "Adder.h"
 	#include "Substractor.h"
@@ -93,6 +94,7 @@
 	int assignValueToIdentifier(std::string name, int value);
 	int constructValueToRegister(int value);
 	void undefinedVariableError(std::string varName);
+	void typeMismatchError(std::string varName);
 	int storeIdentifier(std::string name);
 	void numberTooBigError(std::string varName);
 	void printAsmInstructions();
@@ -110,7 +112,7 @@
 	std::stack<int> whileJumpPointerStack;
 	std::vector<string> initializedVars;
 
-#line 114 "grammar.tab.c" /* yacc.c:339  */
+#line 116 "grammar.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -189,14 +191,15 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 48 "grammar.y" /* yacc.c:355  */
+#line 50 "grammar.y" /* yacc.c:355  */
 
 	char* string;
 	int integer;
+	Variable* variable;
 	//Identifier* identifier;
 	//Command* command;
 
-#line 200 "grammar.tab.c" /* yacc.c:355  */
+#line 203 "grammar.tab.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -213,7 +216,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 217 "grammar.tab.c" /* yacc.c:358  */
+#line 220 "grammar.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -514,10 +517,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   100,   100,   105,   109,   113,   115,   116,   118,   142,
-     146,   142,   149,   151,   149,   164,   165,   166,   171,   185,
-     185,   199,   206,   207,   214,   219,   220,   221,   223,   236,
-     239,   246,   253,   260,   268,   271,   273,   274,   275
+       0,   103,   103,   108,   112,   116,   118,   119,   121,   145,
+     149,   145,   152,   154,   152,   167,   168,   169,   174,   188,
+     188,   202,   209,   210,   217,   222,   223,   224,   226,   239,
+     242,   249,   256,   263,   271,   274,   276,   277,   278
 };
 #endif
 
@@ -1354,47 +1357,47 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 100 "grammar.y" /* yacc.c:1646  */
+#line 103 "grammar.y" /* yacc.c:1646  */
     {
 								asmInstrunctions.push_back(new AsmInstruction("HALT"));
 								printAsmInstructions();
 								}
-#line 1363 "grammar.tab.c" /* yacc.c:1646  */
+#line 1366 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 105 "grammar.y" /* yacc.c:1646  */
+#line 108 "grammar.y" /* yacc.c:1646  */
     {
 								if(initializeIdentifier((yyvsp[0].string),0,1))
 										return 1;
 								}
-#line 1372 "grammar.tab.c" /* yacc.c:1646  */
+#line 1375 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 109 "grammar.y" /* yacc.c:1646  */
+#line 112 "grammar.y" /* yacc.c:1646  */
     {
 								if(initializeIdentifier((yyvsp[-3].string),1,atoll((yyvsp[-1].string))))
 									return 1;
 							}
-#line 1381 "grammar.tab.c" /* yacc.c:1646  */
+#line 1384 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 118 "grammar.y" /* yacc.c:1646  */
+#line 121 "grammar.y" /* yacc.c:1646  */
     {
 									//printf("debug exp: %s \n", $3);
-									initializedVars.push_back((yyvsp[-3].string));
+									initializedVars.push_back((yyvsp[-3].variable));
 									string exp((yyvsp[-1].string));
 									if(std::regex_match((yyvsp[-1].string), std::regex("[0-9]+")))
 									{
-										if(assignValueToIdentifier((yyvsp[-3].string), atoi((yyvsp[-1].string))))
+										if(assignValueToIdentifier((yyvsp[-3].variable), atoi((yyvsp[-1].string))))
 											return 1;
 									}
 									else if(exp == "OEX")
 									{
 										//printf("debug identifier %s \n", $1);
-										int place = findVariableInMemory((yyvsp[-3].string));
+										int place = findVariableInMemory((yyvsp[-3].variable));
 										if(place == -1)
 											return 1;
 										asmInstrunctions.push_back(new AsmInstruction("STORE", place));
@@ -1402,51 +1405,51 @@ yyreduce:
 									else
 									{
 										//printf("debug identifier %s \n", $1);
-										if(copyValueFromAnotherIdentifier((yyvsp[-1].string), (yyvsp[-3].string)))
+										if(copyValueFromAnotherIdentifier((yyvsp[-1].string), (yyvsp[-3].variable)))
 											return 1;
 									}
 								}
-#line 1410 "grammar.tab.c" /* yacc.c:1646  */
+#line 1413 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 142 "grammar.y" /* yacc.c:1646  */
+#line 145 "grammar.y" /* yacc.c:1646  */
     {
 								//printf("pushneem wlasnie: %d",asmInstrunctions.size());
 								jzeroLinePointerStack.push(asmInstrunctions.size());
 							  asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
 							}
-#line 1420 "grammar.tab.c" /* yacc.c:1646  */
+#line 1423 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 146 "grammar.y" /* yacc.c:1646  */
+#line 149 "grammar.y" /* yacc.c:1646  */
     {
 
 							}
-#line 1428 "grammar.tab.c" /* yacc.c:1646  */
+#line 1431 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 149 "grammar.y" /* yacc.c:1646  */
+#line 152 "grammar.y" /* yacc.c:1646  */
     {
 								whileConditionPointerStack.push(asmInstrunctions.size());
 							}
-#line 1436 "grammar.tab.c" /* yacc.c:1646  */
+#line 1439 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 151 "grammar.y" /* yacc.c:1646  */
+#line 154 "grammar.y" /* yacc.c:1646  */
     {
 								whileJumpPointerStack.push(asmInstrunctions.size());
 								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
 
 							}
-#line 1446 "grammar.tab.c" /* yacc.c:1646  */
+#line 1449 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 155 "grammar.y" /* yacc.c:1646  */
+#line 158 "grammar.y" /* yacc.c:1646  */
     {
 								int whileConditionStart = whileConditionPointerStack.top();
 								whileConditionPointerStack.pop();
@@ -1456,39 +1459,39 @@ yyreduce:
 								whileJumpPointerStack.pop();
 								asmInstrunctions[whileJump]->arg = asmInstrunctions.size();
 							}
-#line 1460 "grammar.tab.c" /* yacc.c:1646  */
+#line 1463 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 166 "grammar.y" /* yacc.c:1646  */
+#line 169 "grammar.y" /* yacc.c:1646  */
     {
 							//wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
-								if(readToIdentifier((yyvsp[-1].string)))
+								if(readToIdentifier((yyvsp[-1].variable)))
 									return 1;
 							}
-#line 1470 "grammar.tab.c" /* yacc.c:1646  */
+#line 1473 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 171 "grammar.y" /* yacc.c:1646  */
+#line 174 "grammar.y" /* yacc.c:1646  */
     {
-								if(std::regex_match((yyvsp[-1].string), std::regex("[0-9]+")))
+								if(std::regex_match((yyvsp[-1].variable), std::regex("[0-9]+")))
 								{
-									if(writeNumber(atoi((yyvsp[-1].string))))
+									if(writeNumber(atoi((yyvsp[-1].variable))))
 										return 1;
 								}
 								else
 								{
-									if(writeIdentifier((yyvsp[-1].string)))
+									if(writeIdentifier((yyvsp[-1].variable)))
 										return 1;
 								}
 
 							}
-#line 1488 "grammar.tab.c" /* yacc.c:1646  */
+#line 1491 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 185 "grammar.y" /* yacc.c:1646  */
+#line 188 "grammar.y" /* yacc.c:1646  */
     {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
@@ -1498,82 +1501,82 @@ yyreduce:
 								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
 							}
-#line 1502 "grammar.tab.c" /* yacc.c:1646  */
+#line 1505 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 193 "grammar.y" /* yacc.c:1646  */
+#line 196 "grammar.y" /* yacc.c:1646  */
     {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
 								//printf("scionglem wlasnie: %d",jzero);
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size();
 							}
-#line 1513 "grammar.tab.c" /* yacc.c:1646  */
+#line 1516 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 199 "grammar.y" /* yacc.c:1646  */
+#line 202 "grammar.y" /* yacc.c:1646  */
     {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
 								//printf("scionglem wlasnie: %d",jzero);
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size();
 							}
-#line 1524 "grammar.tab.c" /* yacc.c:1646  */
+#line 1527 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 206 "grammar.y" /* yacc.c:1646  */
-    {(yyval.string) = (yyvsp[0].string);}
-#line 1530 "grammar.tab.c" /* yacc.c:1646  */
+#line 209 "grammar.y" /* yacc.c:1646  */
+    {(yyval.string) = (yyvsp[0].variable);}
+#line 1533 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 207 "grammar.y" /* yacc.c:1646  */
+#line 210 "grammar.y" /* yacc.c:1646  */
     {
 								//printf("debug value>num :%s + %s\n",$1, $3);
-								if(determineAndExecuteExpressionOperation((yyvsp[-2].string),(yyvsp[0].string),"+",0))
+								if(determineAndExecuteExpressionOperation((yyvsp[-2].variable),(yyvsp[0].variable),"+",0))
 									return 1;
 								char f[4] = "OEX";
 								(yyval.string) = f;
 							}
-#line 1542 "grammar.tab.c" /* yacc.c:1646  */
+#line 1545 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 214 "grammar.y" /* yacc.c:1646  */
+#line 217 "grammar.y" /* yacc.c:1646  */
     {
-								determineAndExecuteExpressionOperation((yyvsp[-2].string),(yyvsp[0].string),"-",0);
+								determineAndExecuteExpressionOperation((yyvsp[-2].variable),(yyvsp[0].variable),"-",0);
 								char f[4] = "OEX";
 								(yyval.string) = f;
 							}
-#line 1552 "grammar.tab.c" /* yacc.c:1646  */
+#line 1555 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 219 "grammar.y" /* yacc.c:1646  */
+#line 222 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1558 "grammar.tab.c" /* yacc.c:1646  */
+#line 1561 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 220 "grammar.y" /* yacc.c:1646  */
+#line 223 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1564 "grammar.tab.c" /* yacc.c:1646  */
+#line 1567 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 221 "grammar.y" /* yacc.c:1646  */
+#line 224 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1570 "grammar.tab.c" /* yacc.c:1646  */
+#line 1573 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 223 "grammar.y" /* yacc.c:1646  */
+#line 226 "grammar.y" /* yacc.c:1646  */
     {
-								string a((yyvsp[-2].string));
-								string b((yyvsp[0].string));
+								string a((yyvsp[-2].variable));
+								string b((yyvsp[0].variable));
 								if(determineAndExecuteExpressionOperation(a,b,"-", 0))
 									return 1;
 								asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
@@ -1584,99 +1587,99 @@ yyreduce:
 								asmInstrunctions.push_back(new AsmInstruction("SUB", 5));
 								asmInstrunctions.push_back(new AsmInstruction("SUB", 6));
 							}
-#line 1588 "grammar.tab.c" /* yacc.c:1646  */
+#line 1591 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 236 "grammar.y" /* yacc.c:1646  */
+#line 239 "grammar.y" /* yacc.c:1646  */
     {
 
 							}
-#line 1596 "grammar.tab.c" /* yacc.c:1646  */
+#line 1599 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 239 "grammar.y" /* yacc.c:1646  */
+#line 242 "grammar.y" /* yacc.c:1646  */
     {
-								string a((yyvsp[-2].string));
-								string b((yyvsp[0].string));
+								string a((yyvsp[-2].variable));
+								string b((yyvsp[0].variable));
 							  if(determineAndExecuteExpressionOperation(b,a,"-", 0))
 									return 1;
 								(yyval.string) = (yyvsp[-1].string);
 							}
-#line 1608 "grammar.tab.c" /* yacc.c:1646  */
+#line 1611 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 246 "grammar.y" /* yacc.c:1646  */
+#line 249 "grammar.y" /* yacc.c:1646  */
     {
-								string a((yyvsp[-2].string));
-								string b((yyvsp[0].string));
+								string a((yyvsp[-2].variable));
+								string b((yyvsp[0].variable));
 							  if(determineAndExecuteExpressionOperation(a,b,"-", 0))
 									return 1;
 								(yyval.string) = (yyvsp[-1].string);
 							}
-#line 1620 "grammar.tab.c" /* yacc.c:1646  */
+#line 1623 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 253 "grammar.y" /* yacc.c:1646  */
+#line 256 "grammar.y" /* yacc.c:1646  */
     {
-								string a((yyvsp[-2].string));
-								string b((yyvsp[0].string));
+								string a((yyvsp[-2].variable));
+								string b((yyvsp[0].variable));
 							  if(determineAndExecuteExpressionOperation(b,a,"-", 1))
 									return 1;
 								(yyval.string) = (yyvsp[-1].string);
 							}
-#line 1632 "grammar.tab.c" /* yacc.c:1646  */
+#line 1635 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 260 "grammar.y" /* yacc.c:1646  */
+#line 263 "grammar.y" /* yacc.c:1646  */
     {
-								string a((yyvsp[-2].string));
-								string b((yyvsp[0].string));
+								string a((yyvsp[-2].variable));
+								string b((yyvsp[0].variable));
 							  if(determineAndExecuteExpressionOperation(a,b,"-", 1))
 									return 1;
 								(yyval.string) = (yyvsp[-1].string);
 							}
-#line 1644 "grammar.tab.c" /* yacc.c:1646  */
+#line 1647 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 268 "grammar.y" /* yacc.c:1646  */
-    { (yyval.string) = (yyvsp[0].string);
+#line 271 "grammar.y" /* yacc.c:1646  */
+    { (yyval.variable) = (yyvsp[0].string);
 									//printf("debug value>num :%s\n", $1);
 								}
-#line 1652 "grammar.tab.c" /* yacc.c:1646  */
+#line 1655 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 271 "grammar.y" /* yacc.c:1646  */
-    {(yyval.string) = (yyvsp[0].string);}
-#line 1658 "grammar.tab.c" /* yacc.c:1646  */
+#line 274 "grammar.y" /* yacc.c:1646  */
+    {(yyval.variable) = (yyvsp[0].variable);}
+#line 1661 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 273 "grammar.y" /* yacc.c:1646  */
-    {(yyval.string) = (yyvsp[0].string);}
-#line 1664 "grammar.tab.c" /* yacc.c:1646  */
+#line 276 "grammar.y" /* yacc.c:1646  */
+    {(yyval.variable) = (yyvsp[0].string);}
+#line 1667 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 274 "grammar.y" /* yacc.c:1646  */
+#line 277 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1670 "grammar.tab.c" /* yacc.c:1646  */
+#line 1673 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 38:
-#line 275 "grammar.y" /* yacc.c:1646  */
+#line 278 "grammar.y" /* yacc.c:1646  */
     {}
-#line 1676 "grammar.tab.c" /* yacc.c:1646  */
+#line 1679 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1680 "grammar.tab.c" /* yacc.c:1646  */
+#line 1683 "grammar.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1904,7 +1907,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 276 "grammar.y" /* yacc.c:1906  */
+#line 279 "grammar.y" /* yacc.c:1906  */
 
 
 /********************************METHODS***********************************/
@@ -1912,10 +1915,87 @@ yyreturn:
 using namespace std;
 
 #define OPERATION_STORING_PLACE 1;
+#define ARRAY_BUFFER_STORING_PLACE_1 2;
+#define ARRAY_BUFFER_STORING_PLACE_2 3;
+#define ARRAY_BUFFER_STORING_PLACE_3 4;
 
-int loadToAccumulator(string var)
+//jeśli wywołasz tablice z indexem -1 (takim do zmiennych) to rzuć błąd
+int loadVariableToAccumulator(string name, string index)
 {
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
+	if(checkInitialization(name))
+		return 1;
+	if(it == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return 1;
+	}
+	else if(it->second->array == 0 && index == -1)
+	{
+		if(checkInitialization(name))
+			return 1;
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
+		return 0;
+	}
+	else if(it->second->array == 1 && index >= 0)
+	{
+		if(regex_match(index, regex("[0-9]+")))
+		{
+			constructValueToRegister(atoi(index));
+		}
+		else
+		{
+			loadVariableToAccumulator(index, -1);
+		}
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
+		asmInstrunctions.push_back(new AsmInstruction("ADD", ARRAY_BUFFER_STORING_PLACE_1));
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
+		asmInstrunctions.push_back(new AsmInstruction("LOADI", ARRAY_BUFFER_STORING_PLACE_1));
+		return 0;
+	}
+	else
+	{
+		typeMismatchError(name);
+		return 1;
+	}
+}
+
+int copyValueFromAnotherIdentifier(std::string from, std::string to)
+{
+	map<string, MemoryItem*>::iterator itFrom = memoryMap.find(from);
+	map<string, MemoryItem*>::iterator itTo = memoryMap.find(to);
+	if(itFrom == memoryMap.end())
+	{
+		undefinedVariableError(from);
+		return 1;
+	}
+	else if (itTo == memoryMap.end())
+	{
+		undefinedVariableError(to);
+		return 1;
+	}
+	else
+	{
+		if(checkInitialization(from))
+			return 1;
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", itFrom->second->cell));
+		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second->cell));
+	}
 	return 0;
+}
+
+int assignValueToIdentifier(string name, int value)
+{
+	if(constructValueToRegister(value))
+	{
+		numberTooBigError(name);
+		return 1;
+	}
+	else
+	{
+		return storeIdentifier(name);
+	}
 }
 
 int findVariableInMemory(string name)
@@ -2039,43 +2119,6 @@ string decToBin(int number)
     return result;
 }
 
-int copyValueFromAnotherIdentifier(std::string from, std::string to)
-{
-	map<string, MemoryItem*>::iterator itFrom = memoryMap.find(from);
-	map<string, MemoryItem*>::iterator itTo = memoryMap.find(to);
-	if(itFrom == memoryMap.end())
-	{
-		undefinedVariableError(from);
-		return 1;
-	}
-	else if (itTo == memoryMap.end())
-	{
-		undefinedVariableError(to);
-		return 1;
-	}
-	else
-	{
-		if(checkInitialization(from))
-			return 1;
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", itFrom->second->cell));
-		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second->cell));
-	}
-	return 0;
-}
-
-int assignValueToIdentifier(string name, int value)
-{
-	if(constructValueToRegister(value))
-	{
-		numberTooBigError(name);
-		return 1;
-	}
-	else
-	{
-		return storeIdentifier(name);
-	}
-}
-
 int constructValueToRegister(int value)
 {
 	string valueBin = decToBin(value);
@@ -2163,6 +2206,16 @@ void printAsmInstructions()
 }
 
 /*******************ERROR HANDLING*********************************/
+
+void typeMismatchError(string varName)
+{
+	char* error =(char*) malloc(100);
+	error = strcpy(error, "Incorrect call to '");
+	error = strcat(error,varName.c_str());
+	error = strcat(error,"' variable. Type mismatch.");
+	yyerror(error);
+	free(error);
+}
 
 void undefinedVariableError(string varName)
 {
