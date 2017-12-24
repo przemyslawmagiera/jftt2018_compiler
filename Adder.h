@@ -5,11 +5,10 @@
 
 
 using namespace std;
-
 extern int constructValueToRegister(int value);
 extern void	undefinedVariableError(string varName);
 extern int	checkInitialization(string varName);
-extern map<string, int> memoryMap;
+extern map<string, MemoryItem*> memoryMap;
 extern vector<AsmInstruction*> asmInstrunctions;
 
 
@@ -36,7 +35,7 @@ int Adder::add(int a, int b)
 
 int Adder::add(int a, string name)
 {
-	map<string, int>::iterator it = memoryMap.find(name);
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())
 	{
 		undefinedVariableError(name);
@@ -47,7 +46,7 @@ int Adder::add(int a, string name)
 		if(checkInitialization(name))
 			return 1;
 	  constructValueToRegister(a);
-	  asmInstrunctions.push_back(new AsmInstruction("ADD", it->second));
+	  asmInstrunctions.push_back(new AsmInstruction("ADD", it->second->cell));
 		return 0;
 	}
 }
@@ -55,8 +54,8 @@ int Adder::add(int a, string name)
 
 int Adder::add(string name1, string name2)
 {
-	map<string, int>::iterator it1 = memoryMap.find(name1);
-	map<string, int>::iterator it2 = memoryMap.find(name2);
+	map<string, MemoryItem*>::iterator it1 = memoryMap.find(name1);
+	map<string, MemoryItem*>::iterator it2 = memoryMap.find(name2);
 	if(it1 == memoryMap.end())
 	{
 		undefinedVariableError(name1);
@@ -71,8 +70,8 @@ int Adder::add(string name1, string name2)
 	{
 		if(checkInitialization(name1) || checkInitialization(name2))
 			return 1;
-	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second));
-	  asmInstrunctions.push_back(new AsmInstruction("ADD", it2->second));
+	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
+	  asmInstrunctions.push_back(new AsmInstruction("ADD", it2->second->cell));
 		return 0;
 	}
 }

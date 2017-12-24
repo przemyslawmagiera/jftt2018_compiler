@@ -4,11 +4,10 @@
 #include <map>
 
 using namespace std;
-
 extern int constructValueToRegister(int value);
 extern void	undefinedVariableError(string varName);
 extern int	checkInitialization(string varName);
-extern map<string, int> memoryMap;
+extern map<string, MemoryItem*> memoryMap;
 extern vector<AsmInstruction*> asmInstrunctions;
 
 
@@ -38,7 +37,7 @@ int Substractor::sub(int a, int b)
 
 int Substractor::sub(int a, string name)
 {
-	map<string, int>::iterator it = memoryMap.find(name);
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())
 	{
 		undefinedVariableError(name);
@@ -49,14 +48,14 @@ int Substractor::sub(int a, string name)
 		if(checkInitialization(name))
 			return 1;
 	  constructValueToRegister(a);
-	  asmInstrunctions.push_back(new AsmInstruction("SUB", it->second));
+	  asmInstrunctions.push_back(new AsmInstruction("SUB", it->second->cell));
 		return 0;
 	}
 }
 
 int Substractor::sub(string name, int a)
 {
-	map<string, int>::iterator it = memoryMap.find(name);
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())
 	{
 		undefinedVariableError(name);
@@ -68,7 +67,7 @@ int Substractor::sub(string name, int a)
 			return 1;
 		constructValueToRegister(a);
 	  asmInstrunctions.push_back(new AsmInstruction("STORE", 0));
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second));
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second->cell));
 	  asmInstrunctions.push_back(new AsmInstruction("SUB", 0));
 		return 0;
 	}
@@ -76,7 +75,7 @@ int Substractor::sub(string name, int a)
 
 int Substractor::subge(string name, int a)
 {
-	map<string, int>::iterator it = memoryMap.find(name);
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())
 	{
 		undefinedVariableError(name);
@@ -88,7 +87,7 @@ int Substractor::subge(string name, int a)
 		if(checkInitialization(name))
 			return 1;
 	  asmInstrunctions.push_back(new AsmInstruction("STORE", 0));
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second));
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second->cell));
 		asmInstrunctions.push_back(new AsmInstruction("INC"));
 	  asmInstrunctions.push_back(new AsmInstruction("SUB", 0));
 		return 0;
@@ -97,8 +96,8 @@ int Substractor::subge(string name, int a)
 
 int Substractor::sub(string name1, string name2)
 {
-	map<string, int>::iterator it1 = memoryMap.find(name1);
-	map<string, int>::iterator it2 = memoryMap.find(name2);
+	map<string, MemoryItem*>::iterator it1 = memoryMap.find(name1);
+	map<string, MemoryItem*>::iterator it2 = memoryMap.find(name2);
 	if(it1 == memoryMap.end())
 	{
 		undefinedVariableError(name1);
@@ -113,16 +112,16 @@ int Substractor::sub(string name1, string name2)
 	{
 		if(checkInitialization(name1) || checkInitialization(name2))
 			return 1;
-	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second));
-	  asmInstrunctions.push_back(new AsmInstruction("SUB", it2->second));
+	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
+	  asmInstrunctions.push_back(new AsmInstruction("SUB", it2->second->cell));
 		return 0;
 	}
 }
 
 int Substractor::subge(string name1, string name2)
 {
-	map<string, int>::iterator it1 = memoryMap.find(name1);
-	map<string, int>::iterator it2 = memoryMap.find(name2);
+	map<string, MemoryItem*>::iterator it1 = memoryMap.find(name1);
+	map<string, MemoryItem*>::iterator it2 = memoryMap.find(name2);
 	if(it1 == memoryMap.end())
 	{
 		undefinedVariableError(name1);
@@ -137,9 +136,9 @@ int Substractor::subge(string name1, string name2)
 	{
 		if(checkInitialization(name1) || checkInitialization(name2))
 			return 1;
-	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second));
+	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
 		asmInstrunctions.push_back(new AsmInstruction("INC"));
-	  asmInstrunctions.push_back(new AsmInstruction("SUB", it2->second));
+	  asmInstrunctions.push_back(new AsmInstruction("SUB", it2->second->cell));
 		return 0;
 	}
 }

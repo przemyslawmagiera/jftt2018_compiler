@@ -6,6 +6,7 @@
 	#include <iostream>
 	#include <map>
 	#include <vector>
+	#include "MemoryItem.h"
 	#include "AsmInstruction.h"
 	#include "Adder.h"
 	#include "Substractor.h"
@@ -19,7 +20,7 @@
 	void yyerror (char const *);
 	extern int yylineno;
 	extern char* yytext;
-	int memory_pointer = 0;
+	long long memory_pointer = 0;
 	int valueTakenFromIdentifier = 0;
 	int findVariableInMemory(std::string name);
 	int determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper,int gte);
@@ -31,13 +32,13 @@
 	void numberTooBigError(std::string varName);
 	void printAsmInstructions();
 	int readToIdentifier(std::string name);
-	int initializeIdentifier(std::string name);
+	int initializeIdentifier(std::string name, int tab, long long size);
 	void printAsmInstructions();
 	int writeNumber(int number);
 	int writeIdentifier(std::string name);
 	void uninitializedVariableError(std::string varName);
 	int loadFromMemory(std::string name);
-	std::map<std::string, int> memoryMap;
+	std::map<std::string, MemoryItem*> memoryMap;
 	std::vector<AsmInstruction*> asmInstrunctions;
 	std::stack<int> jzeroLinePointerStack;
 	std::stack<int> whileConditionPointerStack;
@@ -102,10 +103,13 @@ program				:	VAR vdeclarations T_BEGIN commands END {
 								}
 
 vdeclarations	: vdeclarations PID {
-								if(initializeIdentifier($2))
+								if(initializeIdentifier($2,0,1))
 										return 1;
 								}
-              | vdeclarations PID  T_LBR num T_RBR
+              | vdeclarations PID  T_LBR num T_RBR {
+								if(initializeIdentifier($2,1,atoll($4)))
+									return 1;
+							}
              	|
 
 commands			:	commands command
@@ -277,9 +281,14 @@ using namespace std;
 
 #define OPERATION_STORING_PLACE 1;
 
+int loadToAccumulator(string var)
+{
+	return 0;
+}
+
 int findVariableInMemory(string name)
 {
-	map<string, int>::iterator it = memoryMap.find(name);
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())
 	{
 		undefinedVariableError(name);
@@ -287,7 +296,7 @@ int findVariableInMemory(string name)
 	}
 	else
 	{
-		return it->second;
+		return it->second->cell;
 	}
 }
 //gte sluzy do tego zeby zrobic trik ze zwiekszeniem b przy porownaniu
@@ -365,7 +374,7 @@ int writeNumber(int number)
 
 int writeIdentifier(string name)
 {
-	map<string, int>::iterator it = memoryMap.find(name);
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())
 	{
 		undefinedVariableError(name);
@@ -375,7 +384,7 @@ int writeIdentifier(string name)
 	{
 		if(checkInitialization(name))
 			return 1;
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second));
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second->cell));
 		asmInstrunctions.push_back(new AsmInstruction("PUT"));
 		return 0;
 	}
@@ -400,8 +409,8 @@ string decToBin(int number)
 
 int copyValueFromAnotherIdentifier(std::string from, std::string to)
 {
-	map<string, int>::iterator itFrom = memoryMap.find(from);
-	map<string, int>::iterator itTo = memoryMap.find(to);
+	map<string, MemoryItem*>::iterator itFrom = memoryMap.find(from);
+	map<string, MemoryItem*>::iterator itTo = memoryMap.find(to);
 	if(itFrom == memoryMap.end())
 	{
 		undefinedVariableError(from);
@@ -416,8 +425,8 @@ int copyValueFromAnotherIdentifier(std::string from, std::string to)
 	{
 		if(checkInitialization(from))
 			return 1;
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", itFrom->second));
-		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second));
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", itFrom->second->cell));
+		asmInstrunctions.push_back(new AsmInstruction("STORE", itTo->second->cell));
 	}
 	return 0;
 }
@@ -453,12 +462,13 @@ int constructValueToRegister(int value)
 	return 0;
 }
 
-int initializeIdentifier(string name)
+int initializeIdentifier(string name, int tab, long long size)
 {
-	if(memoryMap.find(name) == memoryMap.end())
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
+	if(it == memoryMap.end())
 	{
-		memoryMap[name] = memory_pointer;
-		memory_pointer++;
+		memoryMap[name] = new MemoryItem(name, tab, memory_pointer, size);
+		memory_pointer+=size+1;
 		return 0;
 	}
 	else
@@ -490,18 +500,22 @@ int checkInitialization(string name)
 
 int storeIdentifier(string name)
 {
-	map<string, int>::iterator it = memoryMap.find(name);
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(memoryMap.find(name) == memoryMap.end())
 	{
 		undefinedVariableError(name);
 		return 1;
 	}
-	else
+else if(it->second->array == 0)
 	{
-		int placeInMemory = it->second;
+		int placeInMemory = it->second->cell;
 		AsmInstruction* a = new AsmInstruction("STORE", placeInMemory);
 		asmInstrunctions.push_back(a);
 		return 0;
+	}
+	else
+	{
+		//tablica
 	}
 }
 
