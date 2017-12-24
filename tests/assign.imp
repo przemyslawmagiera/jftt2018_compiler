@@ -1,0 +1,13 @@
+VAR
+    a b c d e
+BEGIN
+  a := 4;
+  b := a;
+  c := 54;
+  d := a;
+
+  READ e;
+  WRITE 22;
+  WRITE e;
+
+END

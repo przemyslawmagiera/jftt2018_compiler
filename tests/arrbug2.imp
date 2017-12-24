@@ -1,0 +1,9 @@
+VAR
+    tab[10] b dd[8] d ee[5]
+BEGIN
+  b:=7;
+  tab[9] := 8;
+  WRITE tab[9];
+  WRITE b;
+
+END

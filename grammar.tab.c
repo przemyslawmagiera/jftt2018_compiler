@@ -72,7 +72,6 @@
 	#include <map>
 	#include <vector>
 	#include "MemoryItem.h"
-	#include "Variable.h"
 	#include "AsmInstruction.h"
 	#include "Adder.h"
 	#include "Substractor.h"
@@ -88,7 +87,10 @@
 	extern char* yytext;
 	long long memory_pointer = 0;
 	int valueTakenFromIdentifier = 0;
+	int storeArrayValueInTemporaryVariable(std::string name, std::string index, int place);
+	int storeAccumulatorInArray(std::string name, std::string index);
 	int findVariableInMemory(std::string name);
+	int loadTableElementToAccumulator(std::string name, std::string index);
 	int determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper,int gte);
 	int copyValueFromAnotherIdentifier(std::string from, std::string to);
 	int assignValueToIdentifier(std::string name, int value);
@@ -111,8 +113,25 @@
 	std::stack<int> whileConditionPointerStack;
 	std::stack<int> whileJumpPointerStack;
 	std::vector<string> initializedVars;
+	struct Value {
+    bool isArray;
+    bool isNumber;
+    bool isVariable;
+		bool isResult;
+    string num;
+    string name;
+		string index;
+	};
+	#define OPERATION_STORING_PLACE 1
+	#define ARRAY_BUFFER_STORING_PLACE_1 2
+	#define ARRAY_BUFFER_STORING_PLACE_2 3
+	#define ARRAY_BUFFER_STORING_PLACE_3 4
+	std::string ARRAY_TEMP_VAR_1 = "A1";
+	std::string ARRAY_TEMP_VAR_2 = "A2";
+	std::string ARRAY_TEMP_VAR_3 = "A3";
+	#define TEMP_ACC_PLACE 5
 
-#line 116 "grammar.tab.c" /* yacc.c:339  */
+#line 135 "grammar.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -191,15 +210,15 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 50 "grammar.y" /* yacc.c:355  */
+#line 69 "grammar.y" /* yacc.c:355  */
 
 	char* string;
 	int integer;
-	Variable* variable;
+	struct Value* value;
 	//Identifier* identifier;
 	//Command* command;
 
-#line 203 "grammar.tab.c" /* yacc.c:355  */
+#line 222 "grammar.tab.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -216,7 +235,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 220 "grammar.tab.c" /* yacc.c:358  */
+#line 239 "grammar.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -517,10 +536,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   103,   103,   108,   112,   116,   118,   119,   121,   145,
-     149,   145,   152,   154,   152,   167,   168,   169,   174,   188,
-     188,   202,   209,   210,   217,   222,   223,   224,   226,   239,
-     242,   249,   256,   263,   271,   274,   276,   277,   278
+       0,   122,   122,   127,   131,   135,   137,   138,   140,   205,
+     209,   205,   212,   214,   212,   227,   228,   229,   243,   263,
+     263,   277,   284,   285,   320,   353,   354,   355,   357,   403,
+     406,   433,   460,   487,   515,   526,   528,   537,   547
 };
 #endif
 
@@ -1357,99 +1376,140 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 103 "grammar.y" /* yacc.c:1646  */
+#line 122 "grammar.y" /* yacc.c:1646  */
     {
 								asmInstrunctions.push_back(new AsmInstruction("HALT"));
 								printAsmInstructions();
 								}
-#line 1366 "grammar.tab.c" /* yacc.c:1646  */
+#line 1385 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 108 "grammar.y" /* yacc.c:1646  */
+#line 127 "grammar.y" /* yacc.c:1646  */
     {
 								if(initializeIdentifier((yyvsp[0].string),0,1))
 										return 1;
 								}
-#line 1375 "grammar.tab.c" /* yacc.c:1646  */
+#line 1394 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 112 "grammar.y" /* yacc.c:1646  */
+#line 131 "grammar.y" /* yacc.c:1646  */
     {
 								if(initializeIdentifier((yyvsp[-3].string),1,atoll((yyvsp[-1].string))))
 									return 1;
 							}
-#line 1384 "grammar.tab.c" /* yacc.c:1646  */
+#line 1403 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 121 "grammar.y" /* yacc.c:1646  */
+#line 140 "grammar.y" /* yacc.c:1646  */
     {
 									//printf("debug exp: %s \n", $3);
-									initializedVars.push_back((yyvsp[-3].variable));
-									string exp((yyvsp[-1].string));
-									if(std::regex_match((yyvsp[-1].string), std::regex("[0-9]+")))
+									if((yyvsp[-3].value)->isVariable == true)
 									{
-										if(assignValueToIdentifier((yyvsp[-3].variable), atoi((yyvsp[-1].string))))
-											return 1;
-									}
-									else if(exp == "OEX")
-									{
-										//printf("debug identifier %s \n", $1);
-										int place = findVariableInMemory((yyvsp[-3].variable));
-										if(place == -1)
-											return 1;
-										asmInstrunctions.push_back(new AsmInstruction("STORE", place));
+										initializedVars.push_back((yyvsp[-3].value)->name);
+										if((yyvsp[-1].value)->isNumber)
+										{
+											if(assignValueToIdentifier((yyvsp[-3].value)->name, stoi((yyvsp[-1].value)->num)))
+												return 1;
+										}
+										else if((yyvsp[-1].value)->isResult)
+										{
+											//printf("debug identifier %s \n", $1);
+											int place = findVariableInMemory((yyvsp[-3].value)->name);
+											if(place == -1)
+												return 1;
+											asmInstrunctions.push_back(new AsmInstruction("STORE", place));
+										}
+										else if((yyvsp[-1].value)->isArray)
+										{
+											loadTableElementToAccumulator((yyvsp[-1].value)->name, (yyvsp[-1].value)->index);
+											int place = findVariableInMemory((yyvsp[-3].value)->name);
+											if(place == -1)
+												return 1;
+											asmInstrunctions.push_back(new AsmInstruction("STORE", place));
+										}
+										else if((yyvsp[-1].value)->isVariable)
+										{
+											//printf("debug identifier %s \n", $1);
+											if(copyValueFromAnotherIdentifier((yyvsp[-1].value)->name, (yyvsp[-3].value)->name))
+												return 1;
+										}
 									}
 									else
 									{
-										//printf("debug identifier %s \n", $1);
-										if(copyValueFromAnotherIdentifier((yyvsp[-1].string), (yyvsp[-3].variable)))
-											return 1;
+										if((yyvsp[-1].value)->isNumber)
+										{
+											constructValueToRegister(stoi((yyvsp[-1].value)->num));
+											if(storeAccumulatorInArray((yyvsp[-3].value)->name, (yyvsp[-3].value)->index))
+												return 1;
+										}
+										else if((yyvsp[-1].value)->isResult)
+										{
+											if(storeAccumulatorInArray((yyvsp[-3].value)->name, (yyvsp[-3].value)->index))
+												return 1;
+										}
+										else if((yyvsp[-1].value)->isArray)
+										{
+											if(loadTableElementToAccumulator((yyvsp[-1].value)->name, (yyvsp[-1].value)->index))
+												return 1;
+											if(storeAccumulatorInArray((yyvsp[-3].value)->name, (yyvsp[-3].value)->index))
+												return 1;
+										}
+										else if((yyvsp[-1].value)->isVariable)
+										{
+											int place = findVariableInMemory((yyvsp[-1].value)->name);
+											if(place == -1)
+												return 1;
+											asmInstrunctions.push_back(new AsmInstruction("LOAD", place));
+											if(storeAccumulatorInArray((yyvsp[-3].value)->name, (yyvsp[-3].value)->index))
+												return 1;
+										}
 									}
+
 								}
-#line 1413 "grammar.tab.c" /* yacc.c:1646  */
+#line 1473 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 145 "grammar.y" /* yacc.c:1646  */
+#line 205 "grammar.y" /* yacc.c:1646  */
     {
 								//printf("pushneem wlasnie: %d",asmInstrunctions.size());
 								jzeroLinePointerStack.push(asmInstrunctions.size());
 							  asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
 							}
-#line 1423 "grammar.tab.c" /* yacc.c:1646  */
+#line 1483 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 149 "grammar.y" /* yacc.c:1646  */
+#line 209 "grammar.y" /* yacc.c:1646  */
     {
 
 							}
-#line 1431 "grammar.tab.c" /* yacc.c:1646  */
+#line 1491 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 152 "grammar.y" /* yacc.c:1646  */
+#line 212 "grammar.y" /* yacc.c:1646  */
     {
 								whileConditionPointerStack.push(asmInstrunctions.size());
 							}
-#line 1439 "grammar.tab.c" /* yacc.c:1646  */
+#line 1499 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 154 "grammar.y" /* yacc.c:1646  */
+#line 214 "grammar.y" /* yacc.c:1646  */
     {
 								whileJumpPointerStack.push(asmInstrunctions.size());
 								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
 
 							}
-#line 1449 "grammar.tab.c" /* yacc.c:1646  */
+#line 1509 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 158 "grammar.y" /* yacc.c:1646  */
+#line 218 "grammar.y" /* yacc.c:1646  */
     {
 								int whileConditionStart = whileConditionPointerStack.top();
 								whileConditionPointerStack.pop();
@@ -1459,39 +1519,54 @@ yyreduce:
 								whileJumpPointerStack.pop();
 								asmInstrunctions[whileJump]->arg = asmInstrunctions.size();
 							}
-#line 1463 "grammar.tab.c" /* yacc.c:1646  */
+#line 1523 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 169 "grammar.y" /* yacc.c:1646  */
+#line 229 "grammar.y" /* yacc.c:1646  */
     {
 							//wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
-								if(readToIdentifier((yyvsp[-1].variable)))
-									return 1;
-							}
-#line 1473 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 18:
-#line 174 "grammar.y" /* yacc.c:1646  */
-    {
-								if(std::regex_match((yyvsp[-1].variable), std::regex("[0-9]+")))
+								if((yyvsp[-1].value)->isVariable)
 								{
-									if(writeNumber(atoi((yyvsp[-1].variable))))
+									if(readToIdentifier((yyvsp[-1].value)->name))
 										return 1;
 								}
 								else
 								{
-									if(writeIdentifier((yyvsp[-1].variable)))
+									asmInstrunctions.push_back(new AsmInstruction("GET"));
+									if(storeAccumulatorInArray((yyvsp[-1].value)->name,(yyvsp[-1].value)->index))
 										return 1;
+								}
+							}
+#line 1542 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 18:
+#line 243 "grammar.y" /* yacc.c:1646  */
+    {
+								if((yyvsp[-1].value)->isNumber)
+								{
+									if(writeNumber(stoi((yyvsp[-1].value)->num)))
+										return 1;
+								}
+								else if((yyvsp[-1].value)->isVariable)
+								{
+									if(writeIdentifier((yyvsp[-1].value)->name))
+										return 1;
+								}
+								else
+								{
+									if(loadTableElementToAccumulator((yyvsp[-1].value)->name, (yyvsp[-1].value)->index))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("PUT"));
 								}
 
 							}
-#line 1491 "grammar.tab.c" /* yacc.c:1646  */
+#line 1566 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 188 "grammar.y" /* yacc.c:1646  */
+#line 263 "grammar.y" /* yacc.c:1646  */
     {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
@@ -1501,185 +1576,388 @@ yyreduce:
 								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
 							}
-#line 1505 "grammar.tab.c" /* yacc.c:1646  */
+#line 1580 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 196 "grammar.y" /* yacc.c:1646  */
+#line 271 "grammar.y" /* yacc.c:1646  */
     {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();
 								//printf("scionglem wlasnie: %d",jzero);
 								asmInstrunctions[jzero]->arg = asmInstrunctions.size();
-							}
-#line 1516 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 21:
-#line 202 "grammar.y" /* yacc.c:1646  */
-    {
-								int jzero = jzeroLinePointerStack.top();
-								jzeroLinePointerStack.pop();
-								//printf("scionglem wlasnie: %d",jzero);
-								asmInstrunctions[jzero]->arg = asmInstrunctions.size();
-							}
-#line 1527 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 22:
-#line 209 "grammar.y" /* yacc.c:1646  */
-    {(yyval.string) = (yyvsp[0].variable);}
-#line 1533 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 23:
-#line 210 "grammar.y" /* yacc.c:1646  */
-    {
-								//printf("debug value>num :%s + %s\n",$1, $3);
-								if(determineAndExecuteExpressionOperation((yyvsp[-2].variable),(yyvsp[0].variable),"+",0))
-									return 1;
-								char f[4] = "OEX";
-								(yyval.string) = f;
-							}
-#line 1545 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 24:
-#line 217 "grammar.y" /* yacc.c:1646  */
-    {
-								determineAndExecuteExpressionOperation((yyvsp[-2].variable),(yyvsp[0].variable),"-",0);
-								char f[4] = "OEX";
-								(yyval.string) = f;
-							}
-#line 1555 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 25:
-#line 222 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1561 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 26:
-#line 223 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1567 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 27:
-#line 224 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1573 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 28:
-#line 226 "grammar.y" /* yacc.c:1646  */
-    {
-								string a((yyvsp[-2].variable));
-								string b((yyvsp[0].variable));
-								if(determineAndExecuteExpressionOperation(a,b,"-", 0))
-									return 1;
-								asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
-								if(determineAndExecuteExpressionOperation(b,a,"-", 0))
-									return 1;
-								asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
-								constructValueToRegister(1);
-								asmInstrunctions.push_back(new AsmInstruction("SUB", 5));
-								asmInstrunctions.push_back(new AsmInstruction("SUB", 6));
 							}
 #line 1591 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
+  case 21:
+#line 277 "grammar.y" /* yacc.c:1646  */
+    {
+								int jzero = jzeroLinePointerStack.top();
+								jzeroLinePointerStack.pop();
+								//printf("scionglem wlasnie: %d",jzero);
+								asmInstrunctions[jzero]->arg = asmInstrunctions.size();
+							}
+#line 1602 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 22:
+#line 284 "grammar.y" /* yacc.c:1646  */
+    {(yyval.value) = (yyvsp[0].value);}
+#line 1608 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 23:
+#line 285 "grammar.y" /* yacc.c:1646  */
+    {
+								//printf("debug value>num :%s + %s\n",$1, $3);
+								//std::cout <<"name: "<< $1->name<<" array: "<< $1->isArray <<endl;
+								if((yyvsp[-2].value)->isArray == true && (yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"+",0))
+										return 1;
+								}
+								else if((yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 2);
+									if(determineAndExecuteExpressionOperation((yyvsp[-2].value)->name,ARRAY_TEMP_VAR_2,"+",0))
+										return 1;
+								}
+								else if((yyvsp[-2].value)->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,(yyvsp[0].value)->name,"+",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation((yyvsp[-2].value)->name,(yyvsp[0].value)->name,"+",0))
+										return 1;
+								}
+								Value* newValue = new Value;
+								newValue->isArray = false;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = true;
+								(yyval.value) = newValue;
+							}
+#line 1648 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 24:
+#line 320 "grammar.y" /* yacc.c:1646  */
+    {
+								if((yyvsp[-2].value)->isArray == true && (yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
+										return 1;
+								}
+								else if((yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 2);
+									if(determineAndExecuteExpressionOperation((yyvsp[-2].value)->name,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+								}
+								else if((yyvsp[-2].value)->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,(yyvsp[0].value)->name,"-",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation((yyvsp[-2].value)->name,(yyvsp[0].value)->name,"-",0))
+										return 1;
+								}
+								Value* newValue = new Value;
+								newValue->isArray = false;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = true;
+								(yyval.value) = newValue;
+							}
+#line 1686 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 25:
+#line 353 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1692 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 26:
+#line 354 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1698 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 27:
+#line 355 "grammar.y" /* yacc.c:1646  */
+    {}
+#line 1704 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 28:
+#line 357 "grammar.y" /* yacc.c:1646  */
+    {
+								if((yyvsp[-2].value)->isArray == true && (yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_3,ARRAY_TEMP_VAR_1,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								else if((yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 2);
+									if(determineAndExecuteExpressionOperation((yyvsp[-2].value)->name,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2, (yyvsp[-2].value)->name,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								else if((yyvsp[-2].value)->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,(yyvsp[0].value)->name,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation((yyvsp[0].value)->name, ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation((yyvsp[-2].value)->name,(yyvsp[0].value)->name,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation((yyvsp[0].value)->name,(yyvsp[-2].value)->name,"-", 0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								constructValueToRegister(1);
+								asmInstrunctions.push_back(new AsmInstruction("SUB", 5));
+								asmInstrunctions.push_back(new AsmInstruction("SUB", 6));
+							}
+#line 1755 "grammar.tab.c" /* yacc.c:1646  */
+    break;
+
   case 29:
-#line 239 "grammar.y" /* yacc.c:1646  */
+#line 403 "grammar.y" /* yacc.c:1646  */
     {
 
 							}
-#line 1599 "grammar.tab.c" /* yacc.c:1646  */
+#line 1763 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 242 "grammar.y" /* yacc.c:1646  */
+#line 406 "grammar.y" /* yacc.c:1646  */
     {
-								string a((yyvsp[-2].variable));
-								string b((yyvsp[0].variable));
-							  if(determineAndExecuteExpressionOperation(b,a,"-", 0))
-									return 1;
-								(yyval.string) = (yyvsp[-1].string);
+								if((yyvsp[-2].value)->isArray == true && (yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_3,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+								}
+								else if((yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2, (yyvsp[-2].value)->name,"-",0))
+										return 1;
+								}
+								else if((yyvsp[-2].value)->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									if(determineAndExecuteExpressionOperation((yyvsp[0].value)->name,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation((yyvsp[0].value)->name,(yyvsp[-2].value)->name,"-",0))
+										return 1;
+								}
 							}
-#line 1611 "grammar.tab.c" /* yacc.c:1646  */
+#line 1795 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 249 "grammar.y" /* yacc.c:1646  */
+#line 433 "grammar.y" /* yacc.c:1646  */
     {
-								string a((yyvsp[-2].variable));
-								string b((yyvsp[0].variable));
-							  if(determineAndExecuteExpressionOperation(a,b,"-", 0))
-									return 1;
-								(yyval.string) = (yyvsp[-1].string);
+								if((yyvsp[-2].value)->isArray == true && (yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
+										return 1;
+								}
+								else if((yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 2);
+									if(determineAndExecuteExpressionOperation((yyvsp[-2].value)->name,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+								}
+								else if((yyvsp[-2].value)->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,(yyvsp[0].value)->name,"-",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation((yyvsp[-2].value)->name,(yyvsp[0].value)->name,"-",0))
+										return 1;
+								}
 							}
-#line 1623 "grammar.tab.c" /* yacc.c:1646  */
+#line 1827 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 256 "grammar.y" /* yacc.c:1646  */
+#line 460 "grammar.y" /* yacc.c:1646  */
     {
-								string a((yyvsp[-2].variable));
-								string b((yyvsp[0].variable));
-							  if(determineAndExecuteExpressionOperation(b,a,"-", 1))
-									return 1;
-								(yyval.string) = (yyvsp[-1].string);
+								if((yyvsp[-2].value)->isArray == true && (yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_3,ARRAY_TEMP_VAR_2,"-",1))
+										return 1;
+								}
+								else if((yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2, (yyvsp[-2].value)->name,"-",1))
+										return 1;
+								}
+								else if((yyvsp[-2].value)->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									if(determineAndExecuteExpressionOperation((yyvsp[0].value)->name,ARRAY_TEMP_VAR_2,"-",1))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation((yyvsp[0].value)->name,(yyvsp[-2].value)->name,"-",1))
+										return 1;
+								}
 							}
-#line 1635 "grammar.tab.c" /* yacc.c:1646  */
+#line 1859 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 263 "grammar.y" /* yacc.c:1646  */
+#line 487 "grammar.y" /* yacc.c:1646  */
     {
-								string a((yyvsp[-2].variable));
-								string b((yyvsp[0].variable));
-							  if(determineAndExecuteExpressionOperation(a,b,"-", 1))
-									return 1;
-								(yyval.string) = (yyvsp[-1].string);
+								if((yyvsp[-2].value)->isArray == true && (yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",1))
+										return 1;
+								}
+								else if((yyvsp[0].value)->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable((yyvsp[0].value)->name, (yyvsp[0].value)->index, 2);
+									if(determineAndExecuteExpressionOperation((yyvsp[-2].value)->name,ARRAY_TEMP_VAR_2,"-",1))
+										return 1;
+								}
+								else if((yyvsp[-2].value)->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable((yyvsp[-2].value)->name, (yyvsp[-2].value)->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,(yyvsp[0].value)->name,"-",1))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation((yyvsp[-2].value)->name,(yyvsp[0].value)->name,"-",1))
+										return 1;
+								}
 							}
-#line 1647 "grammar.tab.c" /* yacc.c:1646  */
+#line 1891 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 271 "grammar.y" /* yacc.c:1646  */
-    { (yyval.variable) = (yyvsp[0].string);
+#line 515 "grammar.y" /* yacc.c:1646  */
+    {
+									Value* newValue = new Value;
+									newValue->isArray = false;
+									newValue->isVariable = false;
+									newValue->isNumber = true;
+									newValue->isResult = false;
+									newValue->num = (yyvsp[0].string);
+									newValue->name = (yyvsp[0].string); //tylko do determina
+									(yyval.value) = newValue;
 									//printf("debug value>num :%s\n", $1);
 								}
-#line 1655 "grammar.tab.c" /* yacc.c:1646  */
+#line 1907 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 274 "grammar.y" /* yacc.c:1646  */
-    {(yyval.variable) = (yyvsp[0].variable);}
-#line 1661 "grammar.tab.c" /* yacc.c:1646  */
+#line 526 "grammar.y" /* yacc.c:1646  */
+    {(yyval.value) = (yyvsp[0].value);}
+#line 1913 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 276 "grammar.y" /* yacc.c:1646  */
-    {(yyval.variable) = (yyvsp[0].string);}
-#line 1667 "grammar.tab.c" /* yacc.c:1646  */
+#line 528 "grammar.y" /* yacc.c:1646  */
+    {
+									Value* newValue = new Value;
+									newValue->isArray = false;
+									newValue->isVariable = true;
+									newValue->isNumber = false;
+									newValue->isResult = false;
+									newValue->name = (yyvsp[0].string);
+									(yyval.value) = newValue;
+								}
+#line 1927 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 277 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1673 "grammar.tab.c" /* yacc.c:1646  */
+#line 537 "grammar.y" /* yacc.c:1646  */
+    {
+								Value* newValue = new Value;
+								newValue->isArray = true;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = false;
+								newValue->name = (yyvsp[-3].string);
+								newValue->index = (yyvsp[-1].string);
+								(yyval.value) = newValue;
+							}
+#line 1942 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
   case 38:
-#line 278 "grammar.y" /* yacc.c:1646  */
-    {}
-#line 1679 "grammar.tab.c" /* yacc.c:1646  */
+#line 547 "grammar.y" /* yacc.c:1646  */
+    {
+								Value* newValue = new Value;
+								newValue->isArray = true;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = false;
+								newValue->name = (yyvsp[-3].string);
+								newValue->index = (yyvsp[-1].string);
+								(yyval.value) = newValue;
+							}
+#line 1957 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1683 "grammar.tab.c" /* yacc.c:1646  */
+#line 1961 "grammar.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1907,48 +2185,73 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 279 "grammar.y" /* yacc.c:1906  */
+#line 557 "grammar.y" /* yacc.c:1906  */
 
 
 /********************************METHODS***********************************/
 
 using namespace std;
 
-#define OPERATION_STORING_PLACE 1;
-#define ARRAY_BUFFER_STORING_PLACE_1 2;
-#define ARRAY_BUFFER_STORING_PLACE_2 3;
-#define ARRAY_BUFFER_STORING_PLACE_3 4;
 
-//jeśli wywołasz tablice z indexem -1 (takim do zmiennych) to rzuć błąd
-int loadVariableToAccumulator(string name, string index)
+
+//są trzy miejsca w ktorych mozna schować wartości arraya
+int storeArrayValueInTemporaryVariable(string name, string index, int place)
+{
+	if(loadTableElementToAccumulator(name, index))
+		return 1;
+	if(place == 1)
+	{
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
+	}
+	else if(place == 2)
+	{
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_2));
+	}
+	else if(place == 3)
+	{
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_3));
+	}
+}
+
+int findVariableInMemory(string name)
 {
 	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
-	if(checkInitialization(name))
-		return 1;
+	if(it == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return -1;
+	}
+	else
+	{
+		return it->second->cell;
+	}
+}
+
+//jeśli wywołasz tablice z indexem -1 (takim do zmiennych) to rzuć błąd, lub wiekszym niz rozmiar
+int loadTableElementToAccumulator(string name, string index)
+{
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())
 	{
 		undefinedVariableError(name);
 		return 1;
 	}
-	else if(it->second->array == 0 && index == -1)
-	{
-		if(checkInitialization(name))
-			return 1;
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
-		return 0;
-	}
-	else if(it->second->array == 1 && index >= 0)
+	else if(it->second->array == 1 && stoi(index) >= 0)
 	{
 		if(regex_match(index, regex("[0-9]+")))
 		{
-			constructValueToRegister(atoi(index));
+			constructValueToRegister(stoi(index));
 		}
 		else
 		{
-			loadVariableToAccumulator(index, -1);
+			//załaduj variable do akumulatora
+			int place = findVariableInMemory(index);
+			if(place == -1)
+				return 1;
+			asmInstrunctions.push_back(new AsmInstruction("LOAD", place));
 		}
 		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second->cell));
 		asmInstrunctions.push_back(new AsmInstruction("ADD", ARRAY_BUFFER_STORING_PLACE_1));
 		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
 		asmInstrunctions.push_back(new AsmInstruction("LOADI", ARRAY_BUFFER_STORING_PLACE_1));
@@ -1961,7 +2264,7 @@ int loadVariableToAccumulator(string name, string index)
 	}
 }
 
-int copyValueFromAnotherIdentifier(std::string from, std::string to)
+int copyValueFromAnotherIdentifier(string from, string to)
 {
 	map<string, MemoryItem*>::iterator itFrom = memoryMap.find(from);
 	map<string, MemoryItem*>::iterator itTo = memoryMap.find(to);
@@ -1985,6 +2288,27 @@ int copyValueFromAnotherIdentifier(std::string from, std::string to)
 	return 0;
 }
 
+int storeIdentifier(string name)
+{
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
+	if(memoryMap.find(name) == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return 1;
+	}
+	else if(it->second->array == 0)
+	{
+		int placeInMemory = it->second->cell;
+		AsmInstruction* a = new AsmInstruction("STORE", placeInMemory);
+		asmInstrunctions.push_back(a);
+		return 0;
+	}
+	else
+	{
+		//tablica
+	}
+}
+
 int assignValueToIdentifier(string name, int value)
 {
 	if(constructValueToRegister(value))
@@ -1995,20 +2319,6 @@ int assignValueToIdentifier(string name, int value)
 	else
 	{
 		return storeIdentifier(name);
-	}
-}
-
-int findVariableInMemory(string name)
-{
-	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
-	if(it == memoryMap.end())
-	{
-		undefinedVariableError(name);
-		return -1;
-	}
-	else
-	{
-		return it->second->cell;
 	}
 }
 //gte sluzy do tego zeby zrobic trik ze zwiekszeniem b przy porownaniu
@@ -2143,7 +2453,13 @@ int initializeIdentifier(string name, int tab, long long size)
 	if(it == memoryMap.end())
 	{
 		memoryMap[name] = new MemoryItem(name, tab, memory_pointer, size);
-		memory_pointer+=size+1;
+		if(tab == 1)
+		{
+			constructValueToRegister(memory_pointer+1);
+			asmInstrunctions.push_back(new AsmInstruction("STORE", memory_pointer));
+			memory_pointer++;
+		}
+		memory_pointer+=size;
 		return 0;
 	}
 	else
@@ -2158,9 +2474,46 @@ int initializeIdentifier(string name, int tab, long long size)
 
 int readToIdentifier(string name)
 {
+	initializedVars.push_back(name);
 	AsmInstruction* a = new AsmInstruction("GET");
 	asmInstrunctions.push_back(a);
 	return storeIdentifier(name);
+}
+
+int storeAccumulatorInArray(string name, string index)
+{
+	asmInstrunctions.push_back(new AsmInstruction("STORE", TEMP_ACC_PLACE));
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
+	if(it == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return 1;
+	}
+	else if(it->second->array == 1 && stoi(index) >= 0)
+	{
+		if(regex_match(index, regex("[0-9]+")))
+		{
+			constructValueToRegister(stoi(index));
+		}
+		else
+		{
+			//załaduj index do akumulatora
+			int place = findVariableInMemory(index);
+			if(place == -1)
+				return 1;
+			asmInstrunctions.push_back(new AsmInstruction("LOAD", place));
+		}
+		asmInstrunctions.push_back(new AsmInstruction("ADD", it->second->cell));
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", TEMP_ACC_PLACE));
+		asmInstrunctions.push_back(new AsmInstruction("STOREI", ARRAY_BUFFER_STORING_PLACE_1));
+		return 0;
+	}
+	else
+	{
+		typeMismatchError(name);
+		return 1;
+	}
 }
 
 int checkInitialization(string name)
@@ -2171,27 +2524,6 @@ int checkInitialization(string name)
 	}
 	uninitializedVariableError(name);
 	return 1;
-}
-
-int storeIdentifier(string name)
-{
-	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
-	if(memoryMap.find(name) == memoryMap.end())
-	{
-		undefinedVariableError(name);
-		return 1;
-	}
-else if(it->second->array == 0)
-	{
-		int placeInMemory = it->second->cell;
-		AsmInstruction* a = new AsmInstruction("STORE", placeInMemory);
-		asmInstrunctions.push_back(a);
-		return 0;
-	}
-	else
-	{
-		//tablica
-	}
 }
 
 void printAsmInstructions()
@@ -2256,6 +2588,14 @@ void yyerror (char const *s)
 int main (void)
 {
 	memory_pointer = 10;
+
+	memoryMap[ARRAY_TEMP_VAR_1] = new MemoryItem(ARRAY_TEMP_VAR_1, 1, ARRAY_BUFFER_STORING_PLACE_1, 1);
+	memoryMap[ARRAY_TEMP_VAR_2] = new MemoryItem(ARRAY_TEMP_VAR_2, 1, ARRAY_BUFFER_STORING_PLACE_2, 1);
+	memoryMap[ARRAY_TEMP_VAR_3] = new MemoryItem(ARRAY_TEMP_VAR_3, 1, ARRAY_BUFFER_STORING_PLACE_3, 1);
+	initializedVars.push_back(ARRAY_TEMP_VAR_1);
+	initializedVars.push_back(ARRAY_TEMP_VAR_2);
+	initializedVars.push_back(ARRAY_TEMP_VAR_3);
+
 	if(yyparse() == 0)
 		printf("Process returned 0, no errors.\n");
 	else

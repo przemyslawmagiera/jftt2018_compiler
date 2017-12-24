@@ -7,7 +7,6 @@
 	#include <map>
 	#include <vector>
 	#include "MemoryItem.h"
-	#include "Variable.h"
 	#include "AsmInstruction.h"
 	#include "Adder.h"
 	#include "Substractor.h"
@@ -23,7 +22,10 @@
 	extern char* yytext;
 	long long memory_pointer = 0;
 	int valueTakenFromIdentifier = 0;
+	int storeArrayValueInTemporaryVariable(std::string name, std::string index, int place);
+	int storeAccumulatorInArray(std::string name, std::string index);
 	int findVariableInMemory(std::string name);
+	int loadTableElementToAccumulator(std::string name, std::string index);
 	int determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper,int gte);
 	int copyValueFromAnotherIdentifier(std::string from, std::string to);
 	int assignValueToIdentifier(std::string name, int value);
@@ -46,18 +48,35 @@
 	std::stack<int> whileConditionPointerStack;
 	std::stack<int> whileJumpPointerStack;
 	std::vector<string> initializedVars;
+	struct Value {
+    bool isArray;
+    bool isNumber;
+    bool isVariable;
+		bool isResult;
+    string num;
+    string name;
+		string index;
+	};
+	#define OPERATION_STORING_PLACE 1
+	#define ARRAY_BUFFER_STORING_PLACE_1 2
+	#define ARRAY_BUFFER_STORING_PLACE_2 3
+	#define ARRAY_BUFFER_STORING_PLACE_3 4
+	std::string ARRAY_TEMP_VAR_1 = "A1";
+	std::string ARRAY_TEMP_VAR_2 = "A2";
+	std::string ARRAY_TEMP_VAR_3 = "A3";
+	#define TEMP_ACC_PLACE 5
 %}
 %union {
 	char* string;
 	int integer;
-	Variable* variable;
+	struct Value* value;
 	//Identifier* identifier;
 	//Command* command;
 };
 
-%type <variable> value
-%type <string> expression
-%type<variable> identifier
+%type <value> value
+%type <value> expression
+%type<value> identifier
 %type<string> condition
 
 %token <string> num
@@ -120,28 +139,68 @@ commands			:	commands command
 
 command	      : identifier T_ASG expression T_EL {
 									//printf("debug exp: %s \n", $3);
-									if($1->type == 1)
+									if($1->isVariable == true)
+									{
 										initializedVars.push_back($1->name);
-									string exp($3);
-									if(std::regex_match($3, std::regex("[0-9]+")))
-									{
-										if(assignValueToIdentifier($1, atoi($3)))
-											return 1;
-									}
-									else if(exp == "OEX")
-									{
-										//printf("debug identifier %s \n", $1);
-										int place = findVariableInMemory($1);
-										if(place == -1)
-											return 1;
-										asmInstrunctions.push_back(new AsmInstruction("STORE", place));
+										if($3->isNumber)
+										{
+											if(assignValueToIdentifier($1->name, stoi($3->num)))
+												return 1;
+										}
+										else if($3->isResult)
+										{
+											//printf("debug identifier %s \n", $1);
+											int place = findVariableInMemory($1->name);
+											if(place == -1)
+												return 1;
+											asmInstrunctions.push_back(new AsmInstruction("STORE", place));
+										}
+										else if($3->isArray)
+										{
+											loadTableElementToAccumulator($3->name, $3->index);
+											int place = findVariableInMemory($1->name);
+											if(place == -1)
+												return 1;
+											asmInstrunctions.push_back(new AsmInstruction("STORE", place));
+										}
+										else if($3->isVariable)
+										{
+											//printf("debug identifier %s \n", $1);
+											if(copyValueFromAnotherIdentifier($3->name, $1->name))
+												return 1;
+										}
 									}
 									else
 									{
-										//printf("debug identifier %s \n", $1);
-										if(copyValueFromAnotherIdentifier($3, $1))
-											return 1;
+										if($3->isNumber)
+										{
+											constructValueToRegister(stoi($3->num));
+											if(storeAccumulatorInArray($1->name, $1->index))
+												return 1;
+										}
+										else if($3->isResult)
+										{
+											if(storeAccumulatorInArray($1->name, $1->index))
+												return 1;
+										}
+										else if($3->isArray)
+										{
+											if(loadTableElementToAccumulator($3->name, $3->index))
+												return 1;
+											if(storeAccumulatorInArray($1->name, $1->index))
+												return 1;
+										}
+										else if($3->isVariable)
+										{
+											int place = findVariableInMemory($3->name);
+											if(place == -1)
+												return 1;
+											asmInstrunctions.push_back(new AsmInstruction("LOAD", place));
+											if(storeAccumulatorInArray($1->name, $1->index))
+												return 1;
+										}
 									}
+
 								}
              	| IF condition {
 								//printf("pushneem wlasnie: %d",asmInstrunctions.size());
@@ -169,19 +228,34 @@ command	      : identifier T_ASG expression T_EL {
              	| FOR PID FROM value DOWNTO value DO commands ENDFOR
              	| READ identifier T_EL {
 							//wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
-								if(readToIdentifier($2))
-									return 1;
-							}
-             	| WRITE value T_EL {
-								if(std::regex_match($2, std::regex("[0-9]+")))
+								if($2->isVariable)
 								{
-									if(writeNumber(atoi($2)))
+									if(readToIdentifier($2->name))
 										return 1;
 								}
 								else
 								{
-									if(writeIdentifier($2))
+									asmInstrunctions.push_back(new AsmInstruction("GET"));
+									if(storeAccumulatorInArray($2->name,$2->index))
 										return 1;
+								}
+							}
+             	| WRITE value T_EL {
+								if($2->isNumber)
+								{
+									if(writeNumber(stoi($2->num)))
+										return 1;
+								}
+								else if($2->isVariable)
+								{
+									if(writeIdentifier($2->name))
+										return 1;
+								}
+								else
+								{
+									if(loadTableElementToAccumulator($2->name, $2->index))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("PUT"));
 								}
 
 							}
@@ -210,29 +284,118 @@ innerIf				: ELSE {
 expression		:	value {$$ = $1;}
              	| value T_ADD value {
 								//printf("debug value>num :%s + %s\n",$1, $3);
-								if(determineAndExecuteExpressionOperation($1,$3,"+",0))
-									return 1;
-								char f[4] = "OEX";
-								$$ = f;
+								//std::cout <<"name: "<< $1->name<<" array: "<< $1->isArray <<endl;
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"+",0))
+										return 1;
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"+",0))
+										return 1;
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"+",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($1->name,$3->name,"+",0))
+										return 1;
+								}
+								Value* newValue = new Value;
+								newValue->isArray = false;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = true;
+								$$ = newValue;
 							}
              	| value T_MIN value {
-								determineAndExecuteExpressionOperation($1,$3,"-",0);
-								char f[4] = "OEX";
-								$$ = f;
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
+										return 1;
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"-",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($1->name,$3->name,"-",0))
+										return 1;
+								}
+								Value* newValue = new Value;
+								newValue->isArray = false;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = true;
+								$$ = newValue;
 							}
              	| value T_MUL value {}
              	| value T_DIV value {}
              	| value T_MOD value {}
 
-condition			: value T_EQ value {
-								string a($1);
-								string b($3);
-								if(determineAndExecuteExpressionOperation(a,b,"-", 0))
-									return 1;
-								asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
-								if(determineAndExecuteExpressionOperation(b,a,"-", 0))
-									return 1;
-								asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+condition			:value T_EQ value {
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_3,ARRAY_TEMP_VAR_1,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2, $1->name,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation($3->name, ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($1->name,$3->name,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation($3->name,$1->name,"-", 0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
 								constructValueToRegister(1);
 								asmInstrunctions.push_back(new AsmInstruction("SUB", 5));
 								asmInstrunctions.push_back(new AsmInstruction("SUB", 6));
@@ -241,83 +404,222 @@ condition			: value T_EQ value {
 
 							}
              	| value T_RGT value {
-								string a($1);
-								string b($3);
-							  if(determineAndExecuteExpressionOperation(b,a,"-", 0))
-									return 1;
-								$$ = $2;
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_3,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2, $1->name,"-",0))
+										return 1;
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation($3->name,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($3->name,$1->name,"-",0))
+										return 1;
+								}
 							}
              	| value T_LGT value {
-								string a($1);
-								string b($3);
-							  if(determineAndExecuteExpressionOperation(a,b,"-", 0))
-									return 1;
-								$$ = $2;
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
+										return 1;
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"-",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($1->name,$3->name,"-",0))
+										return 1;
+								}
 							}
              	| value T_RGE value {
-								string a($1);
-								string b($3);
-							  if(determineAndExecuteExpressionOperation(b,a,"-", 1))
-									return 1;
-								$$ = $2;
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_3,ARRAY_TEMP_VAR_2,"-",1))
+										return 1;
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2, $1->name,"-",1))
+										return 1;
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation($3->name,ARRAY_TEMP_VAR_2,"-",1))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($3->name,$1->name,"-",1))
+										return 1;
+								}
 							}
              	| value T_LGE value {
-								string a($1);
-								string b($3);
-							  if(determineAndExecuteExpressionOperation(a,b,"-", 1))
-									return 1;
-								$$ = $2;
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",1))
+										return 1;
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"-",1))
+										return 1;
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"-",1))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($1->name,$3->name,"-",1))
+										return 1;
+								}
 							}
 
-value					:	num { $$ = $1;
+value					:	num {
+									Value* newValue = new Value;
+									newValue->isArray = false;
+									newValue->isVariable = false;
+									newValue->isNumber = true;
+									newValue->isResult = false;
+									newValue->num = $1;
+									newValue->name = $1; //tylko do determina
+									$$ = newValue;
 									//printf("debug value>num :%s\n", $1);
 								}
              	| identifier {$$ = $1;}
 
-identifier:   	PID {$$ = $1;}
-             	| PID T_LBR PID T_RBR  {}
-             	| PID  T_LBR num T_RBR  {}
+identifier:   	PID {
+									Value* newValue = new Value;
+									newValue->isArray = false;
+									newValue->isVariable = true;
+									newValue->isNumber = false;
+									newValue->isResult = false;
+									newValue->name = $1;
+									$$ = newValue;
+								}
+             	| PID T_LBR PID T_RBR {
+								Value* newValue = new Value;
+								newValue->isArray = true;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = false;
+								newValue->name = $1;
+								newValue->index = $3;
+								$$ = newValue;
+							}
+             	| PID  T_LBR num T_RBR {
+								Value* newValue = new Value;
+								newValue->isArray = true;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = false;
+								newValue->name = $1;
+								newValue->index = $3;
+								$$ = newValue;
+							}
 %%
 
 /********************************METHODS***********************************/
 
 using namespace std;
 
-#define OPERATION_STORING_PLACE 1;
-#define ARRAY_BUFFER_STORING_PLACE_1 2;
-#define ARRAY_BUFFER_STORING_PLACE_2 3;
-#define ARRAY_BUFFER_STORING_PLACE_3 4;
 
-//jeśli wywołasz tablice z indexem -1 (takim do zmiennych) to rzuć błąd
-int loadVariableToAccumulator(string name, string index)
+
+//są trzy miejsca w ktorych mozna schować wartości arraya
+int storeArrayValueInTemporaryVariable(string name, string index, int place)
+{
+	if(loadTableElementToAccumulator(name, index))
+		return 1;
+	if(place == 1)
+	{
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
+	}
+	else if(place == 2)
+	{
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_2));
+	}
+	else if(place == 3)
+	{
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_3));
+	}
+}
+
+int findVariableInMemory(string name)
 {
 	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
-	if(checkInitialization(name))
-		return 1;
+	if(it == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return -1;
+	}
+	else
+	{
+		return it->second->cell;
+	}
+}
+
+//jeśli wywołasz tablice z indexem -1 (takim do zmiennych) to rzuć błąd, lub wiekszym niz rozmiar
+int loadTableElementToAccumulator(string name, string index)
+{
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())
 	{
 		undefinedVariableError(name);
 		return 1;
 	}
-	else if(it->second->array == 0 && index == -1)
-	{
-		if(checkInitialization(name))
-			return 1;
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
-		return 0;
-	}
-	else if(it->second->array == 1 && index >= 0)
+	else if(it->second->array == 1 && stoi(index) >= 0)
 	{
 		if(regex_match(index, regex("[0-9]+")))
 		{
-			constructValueToRegister(atoi(index));
+			constructValueToRegister(stoi(index));
 		}
 		else
 		{
-			loadVariableToAccumulator(index, -1);
+			//załaduj variable do akumulatora
+			int place = findVariableInMemory(index);
+			if(place == -1)
+				return 1;
+			asmInstrunctions.push_back(new AsmInstruction("LOAD", place));
 		}
 		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
-		asmInstrunctions.push_back(new AsmInstruction("LOAD", it1->second->cell));
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second->cell));
 		asmInstrunctions.push_back(new AsmInstruction("ADD", ARRAY_BUFFER_STORING_PLACE_1));
 		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
 		asmInstrunctions.push_back(new AsmInstruction("LOADI", ARRAY_BUFFER_STORING_PLACE_1));
@@ -330,7 +632,7 @@ int loadVariableToAccumulator(string name, string index)
 	}
 }
 
-int copyValueFromAnotherIdentifier(std::string from, std::string to)
+int copyValueFromAnotherIdentifier(string from, string to)
 {
 	map<string, MemoryItem*>::iterator itFrom = memoryMap.find(from);
 	map<string, MemoryItem*>::iterator itTo = memoryMap.find(to);
@@ -354,6 +656,27 @@ int copyValueFromAnotherIdentifier(std::string from, std::string to)
 	return 0;
 }
 
+int storeIdentifier(string name)
+{
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
+	if(memoryMap.find(name) == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return 1;
+	}
+	else if(it->second->array == 0)
+	{
+		int placeInMemory = it->second->cell;
+		AsmInstruction* a = new AsmInstruction("STORE", placeInMemory);
+		asmInstrunctions.push_back(a);
+		return 0;
+	}
+	else
+	{
+		//tablica
+	}
+}
+
 int assignValueToIdentifier(string name, int value)
 {
 	if(constructValueToRegister(value))
@@ -364,20 +687,6 @@ int assignValueToIdentifier(string name, int value)
 	else
 	{
 		return storeIdentifier(name);
-	}
-}
-
-int findVariableInMemory(string name)
-{
-	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
-	if(it == memoryMap.end())
-	{
-		undefinedVariableError(name);
-		return -1;
-	}
-	else
-	{
-		return it->second->cell;
 	}
 }
 //gte sluzy do tego zeby zrobic trik ze zwiekszeniem b przy porownaniu
@@ -512,7 +821,13 @@ int initializeIdentifier(string name, int tab, long long size)
 	if(it == memoryMap.end())
 	{
 		memoryMap[name] = new MemoryItem(name, tab, memory_pointer, size);
-		memory_pointer+=size+1;
+		if(tab == 1)
+		{
+			constructValueToRegister(memory_pointer+1);
+			asmInstrunctions.push_back(new AsmInstruction("STORE", memory_pointer));
+			memory_pointer++;
+		}
+		memory_pointer+=size;
 		return 0;
 	}
 	else
@@ -527,9 +842,46 @@ int initializeIdentifier(string name, int tab, long long size)
 
 int readToIdentifier(string name)
 {
+	initializedVars.push_back(name);
 	AsmInstruction* a = new AsmInstruction("GET");
 	asmInstrunctions.push_back(a);
 	return storeIdentifier(name);
+}
+
+int storeAccumulatorInArray(string name, string index)
+{
+	asmInstrunctions.push_back(new AsmInstruction("STORE", TEMP_ACC_PLACE));
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
+	if(it == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return 1;
+	}
+	else if(it->second->array == 1 && stoi(index) >= 0)
+	{
+		if(regex_match(index, regex("[0-9]+")))
+		{
+			constructValueToRegister(stoi(index));
+		}
+		else
+		{
+			//załaduj index do akumulatora
+			int place = findVariableInMemory(index);
+			if(place == -1)
+				return 1;
+			asmInstrunctions.push_back(new AsmInstruction("LOAD", place));
+		}
+		asmInstrunctions.push_back(new AsmInstruction("ADD", it->second->cell));
+		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_1));
+		asmInstrunctions.push_back(new AsmInstruction("LOAD", TEMP_ACC_PLACE));
+		asmInstrunctions.push_back(new AsmInstruction("STOREI", ARRAY_BUFFER_STORING_PLACE_1));
+		return 0;
+	}
+	else
+	{
+		typeMismatchError(name);
+		return 1;
+	}
 }
 
 int checkInitialization(string name)
@@ -540,27 +892,6 @@ int checkInitialization(string name)
 	}
 	uninitializedVariableError(name);
 	return 1;
-}
-
-int storeIdentifier(string name)
-{
-	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
-	if(memoryMap.find(name) == memoryMap.end())
-	{
-		undefinedVariableError(name);
-		return 1;
-	}
-else if(it->second->array == 0)
-	{
-		int placeInMemory = it->second->cell;
-		AsmInstruction* a = new AsmInstruction("STORE", placeInMemory);
-		asmInstrunctions.push_back(a);
-		return 0;
-	}
-	else
-	{
-		//tablica
-	}
 }
 
 void printAsmInstructions()
@@ -625,6 +956,14 @@ void yyerror (char const *s)
 int main (void)
 {
 	memory_pointer = 10;
+
+	memoryMap[ARRAY_TEMP_VAR_1] = new MemoryItem(ARRAY_TEMP_VAR_1, 1, ARRAY_BUFFER_STORING_PLACE_1, 1);
+	memoryMap[ARRAY_TEMP_VAR_2] = new MemoryItem(ARRAY_TEMP_VAR_2, 1, ARRAY_BUFFER_STORING_PLACE_2, 1);
+	memoryMap[ARRAY_TEMP_VAR_3] = new MemoryItem(ARRAY_TEMP_VAR_3, 1, ARRAY_BUFFER_STORING_PLACE_3, 1);
+	initializedVars.push_back(ARRAY_TEMP_VAR_1);
+	initializedVars.push_back(ARRAY_TEMP_VAR_2);
+	initializedVars.push_back(ARRAY_TEMP_VAR_3);
+
 	if(yyparse() == 0)
 		printf("Process returned 0, no errors.\n");
 	else

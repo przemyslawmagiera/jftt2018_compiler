@@ -89,11 +89,11 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 50 "grammar.y" /* yacc.c:1909  */
+#line 69 "grammar.y" /* yacc.c:1909  */
 
 	char* string;
 	int integer;
-	Variable* variable;
+	struct Value* value;
 	//Identifier* identifier;
 	//Command* command;
 

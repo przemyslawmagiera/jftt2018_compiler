@@ -1,5 +1,18 @@
 VAR
-    a b c
+    a b c t[10]
 BEGIN
+    a := 0;
     b := a + 1;
+    WRITE b;
+    t[1] := 1 + b;
+    t[2] := t[1] + b;
+    WRITE t[1];
+    WRITE t[2];
+
+    t[3] := 20;
+    t[4] := 12;
+    t[5] := t[3] - t[4];
+    t[5] := t[5] - 4;
+    WRITE t[5];
+
 END
