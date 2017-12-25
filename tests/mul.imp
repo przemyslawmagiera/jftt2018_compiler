@@ -1,0 +1,6 @@
+VAR
+  a b
+BEGIN
+  a := 7*8;
+  WRITE a;
+END

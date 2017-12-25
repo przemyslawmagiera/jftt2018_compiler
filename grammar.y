@@ -10,6 +10,8 @@
 	#include "AsmInstruction.h"
 	#include "Adder.h"
 	#include "Substractor.h"
+	#include "Multiplier.h"
+	#include "Divider.h"
 	#include "Identifier.h"
 	#include <fstream>
 	#include <bitset>
@@ -177,11 +179,11 @@ command	      : identifier T_ASG expression T_EL {
 										//puts("chuuiiichuj");
 										if($3->isNumber)
 										{
-											puts("chuuiiichuj1");
+											//puts("chuuiiichuj1");
 											constructValueToRegister(stoi($3->num));
 											if(storeAccumulatorInArray($1->name, $1->index))
 												return 1;
-											puts("chuuujjj2");
+											//puts("chuuujjj2");
 										}
 										else if($3->isResult)
 										{
@@ -508,7 +510,39 @@ expression		:	value {$$ = $1;}
 								newValue->isResult = true;
 								$$ = newValue;
 							}
-             	| value T_MUL value {}
+             	| value T_MUL value {
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"*",0))
+										return 1;
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"*",0))
+										return 1;
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"*",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($1->name,$3->name,"*",0))
+										return 1;
+								}
+								Value* newValue = new Value;
+								newValue->isArray = false;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = true;
+								$$ = newValue;
+							}
              	| value T_DIV value {}
              	| value T_MOD value {}
 
@@ -910,6 +944,30 @@ int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, 
 					return 1;}
 		}
 	}
+	else if(oper == "*")
+	{
+		if(arg1Num && arg2Num)
+		{
+			if(Multiplier::prepare(atoi(arg1.c_str()), atoi(arg2.c_str())))
+				return 1;
+		}
+		else if(!arg1Num && arg2Num)
+		{
+			if(Multiplier::prepare(atoi(arg2.c_str()), arg1))
+				return 1;
+		}
+		else if(arg1Num && !arg2Num)
+		{
+			if(Multiplier::prepare(atoi(arg1.c_str()), arg2))
+				return 1;
+		}
+		else if(!arg1Num && !arg2Num)
+		{
+			if(Multiplier::prepare(arg1,arg2))
+				return 1;
+		}
+		Multiplier::doTheJob();
+	}
 	return 0;
 }
 
@@ -1114,7 +1172,7 @@ void yyerror (char const *s)
 
 int main (void)
 {
-	memory_pointer = 10;
+	memory_pointer = 12;
 
 	memoryMap[ARRAY_TEMP_VAR_1] = new MemoryItem(ARRAY_TEMP_VAR_1, 1, ARRAY_BUFFER_STORING_PLACE_1, 1);
 	memoryMap[ARRAY_TEMP_VAR_2] = new MemoryItem(ARRAY_TEMP_VAR_2, 1, ARRAY_BUFFER_STORING_PLACE_2, 1);
