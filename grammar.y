@@ -47,6 +47,7 @@
 	std::stack<int> jzeroLinePointerStack;
 	std::stack<int> whileConditionPointerStack;
 	std::stack<int> whileJumpPointerStack;
+	std::stack<int> forCounterDeepStack;
 	std::vector<string> initializedVars;
 	struct Value {
     bool isArray;
@@ -64,7 +65,8 @@
 	std::string ARRAY_TEMP_VAR_1 = "A1";
 	std::string ARRAY_TEMP_VAR_2 = "A2";
 	std::string ARRAY_TEMP_VAR_3 = "A3";
-	#define TEMP_ACC_PLACE 5
+	int for_var_counter = 0;
+	#define TEMP_ACC_PLACE 8
 %}
 %union {
 	char* string;
@@ -172,11 +174,14 @@ command	      : identifier T_ASG expression T_EL {
 									}
 									else
 									{
+										//puts("chuuiiichuj");
 										if($3->isNumber)
 										{
+											puts("chuuiiichuj1");
 											constructValueToRegister(stoi($3->num));
 											if(storeAccumulatorInArray($1->name, $1->index))
 												return 1;
+											puts("chuuujjj2");
 										}
 										else if($3->isResult)
 										{
@@ -224,8 +229,161 @@ command	      : identifier T_ASG expression T_EL {
 								whileJumpPointerStack.pop();
 								asmInstrunctions[whileJump]->arg = asmInstrunctions.size();
 							}
-             	| FOR PID FROM value TO value DO commands ENDFOR
-             	| FOR PID FROM value DOWNTO value DO commands ENDFOR
+             	| FOR PID FROM value TO value DO {
+								//zastoruj iterator
+								if(initializeIdentifier($2,0,1))
+									return 1;
+								//wczytaj value1 do akumulatora
+								if($4->isVariable)
+								{
+									int p = findVariableInMemory($4->name);
+									if(p == -1)
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("LOAD", p));
+								}
+								else if($4->isArray)
+								{
+									loadTableElementToAccumulator($4->name, $4->index);
+								}
+								else if($4->isNumber)
+								{
+									constructValueToRegister(stoi($4->num));
+								}
+								int iterAddress = findVariableInMemory($2);
+								asmInstrunctions.push_back(new AsmInstruction("STORE", iterAddress));
+								initializedVars.push_back($2);
+								//teraz mamy już value1 w zmiennej i, co więcej jest zainicjalizowana
+								//zrobmy jeszcze value2 do zmiennej Cx, gdzie x to counter (zeby nie bylo kolizji)
+								if(initializeIdentifier("C"+for_var_counter,0,1))
+									return 1;
+								if($6->isVariable)
+								{
+									int p = findVariableInMemory($6->name);
+									if(p == -1)
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("LOAD", p));
+								}
+								else if($6->isArray)
+								{
+									loadTableElementToAccumulator($6->name, $6->index);
+								}
+								else if($6->isNumber)
+								{
+									//puts("chhhuuujjj");
+									constructValueToRegister(stoi($6->num));
+								}
+								int p = findVariableInMemory("C"+for_var_counter);
+								asmInstrunctions.push_back(new AsmInstruction("STORE", p));
+								initializedVars.push_back("C"+for_var_counter);
+								//mamy zastorowane Tx, teraz trzeba zrobić warunek
+
+								whileConditionPointerStack.push(asmInstrunctions.size());
+								//condition right greater equals: i <= val2
+								if(determineAndExecuteExpressionOperation("C"+for_var_counter,$2,"-",1))
+									return 1;
+
+								whileJumpPointerStack.push(asmInstrunctions.size());
+								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
+								for_var_counter++;
+							}
+							commands ENDFOR {
+								int iterAddress = findVariableInMemory($2);
+								asmInstrunctions.push_back(new AsmInstruction("LOAD", iterAddress));
+								asmInstrunctions.push_back(new AsmInstruction("INC"));
+								asmInstrunctions.push_back(new AsmInstruction("STORE", iterAddress));
+								int whileConditionStart = whileConditionPointerStack.top();
+								whileConditionPointerStack.pop();
+								asmInstrunctions.push_back(new AsmInstruction("ZERO"));
+								asmInstrunctions.push_back(new AsmInstruction("JZERO", whileConditionStart));
+								int whileJump = whileJumpPointerStack.top();
+								whileJumpPointerStack.pop();
+								asmInstrunctions[whileJump]->arg = asmInstrunctions.size();
+								//usunac ze zmiennych Tx oraz iterator
+								vector<string>::iterator it1 = find(initializedVars.begin(), initializedVars.end(), $2);
+								initializedVars.erase(it1);
+
+								map<string, MemoryItem*>::iterator it2 = memoryMap.find($2);
+  							memoryMap.erase(it2);
+
+								for_var_counter++;
+							}
+             	| FOR PID FROM value DOWNTO value DO {
+								//zastoruj iterator
+								if(initializeIdentifier($2,0,1))
+									return 1;
+								//wczytaj value1 do akumulatora
+								if($4->isVariable)
+								{
+									int p = findVariableInMemory($4->name);
+									if(p == -1)
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("LOAD", p));
+								}
+								else if($4->isArray)
+								{
+									loadTableElementToAccumulator($4->name, $4->index);
+								}
+								else if($4->isNumber)
+								{
+									constructValueToRegister(stoi($4->num));
+								}
+								int iterAddress = findVariableInMemory($2);
+								asmInstrunctions.push_back(new AsmInstruction("STORE", iterAddress));
+								initializedVars.push_back($2);
+								//teraz mamy już value1 w zmiennej i, co więcej jest zainicjalizowana
+								//zrobmy jeszcze value2 do zmiennej Cx, gdzie x to counter (zeby nie bylo kolizji)
+								if(initializeIdentifier("C"+for_var_counter,0,1))
+									return 1;
+								if($6->isVariable)
+								{
+									int p = findVariableInMemory($6->name);
+									if(p == -1)
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("LOAD", p));
+								}
+								else if($6->isArray)
+								{
+									loadTableElementToAccumulator($6->name, $6->index);
+								}
+								else if($6->isNumber)
+								{
+									//puts("chhhuuujjj");
+									constructValueToRegister(stoi($6->num));
+								}
+								int p = findVariableInMemory("C"+for_var_counter);
+								asmInstrunctions.push_back(new AsmInstruction("STORE", p));
+								initializedVars.push_back("C"+for_var_counter);
+								//mamy zastorowane Tx, teraz trzeba zrobić warunek
+
+								whileConditionPointerStack.push(asmInstrunctions.size());
+								//condition right greater equals: i <= val2
+								if(determineAndExecuteExpressionOperation($2,"C"+for_var_counter,"-",1))
+									return 1;
+
+								whileJumpPointerStack.push(asmInstrunctions.size());
+								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
+								for_var_counter++;
+							} commands ENDFOR {
+								int iterAddress = findVariableInMemory($2);
+								asmInstrunctions.push_back(new AsmInstruction("LOAD", iterAddress));
+								asmInstrunctions.push_back(new AsmInstruction("DEC"));
+								asmInstrunctions.push_back(new AsmInstruction("STORE", iterAddress));
+								int whileConditionStart = whileConditionPointerStack.top();
+								whileConditionPointerStack.pop();
+								asmInstrunctions.push_back(new AsmInstruction("ZERO"));
+								asmInstrunctions.push_back(new AsmInstruction("JZERO", whileConditionStart));
+								int whileJump = whileJumpPointerStack.top();
+								whileJumpPointerStack.pop();
+								asmInstrunctions[whileJump]->arg = asmInstrunctions.size();
+								//usunac ze zmiennych Tx oraz iterator
+								vector<string>::iterator it1 = find(initializedVars.begin(), initializedVars.end(), $2);
+								initializedVars.erase(it1);
+
+								map<string, MemoryItem*>::iterator it2 = memoryMap.find($2);
+  							memoryMap.erase(it2);
+
+								for_var_counter++;
+							}
              	| READ identifier T_EL {
 							//wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
 								if($2->isVariable)
@@ -604,7 +762,7 @@ int loadTableElementToAccumulator(string name, string index)
 		undefinedVariableError(name);
 		return 1;
 	}
-	else if(it->second->array == 1 && stoi(index) >= 0)
+	else if(it->second->array == 1)
 	{
 		if(regex_match(index, regex("[0-9]+")))
 		{
@@ -850,6 +1008,7 @@ int readToIdentifier(string name)
 
 int storeAccumulatorInArray(string name, string index)
 {
+//	cout<<"idx: "<< index << endl;
 	asmInstrunctions.push_back(new AsmInstruction("STORE", TEMP_ACC_PLACE));
 	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())
@@ -857,7 +1016,7 @@ int storeAccumulatorInArray(string name, string index)
 		undefinedVariableError(name);
 		return 1;
 	}
-	else if(it->second->array == 1 && stoi(index) >= 0)
+	else if(it->second->array == 1)
 	{
 		if(regex_match(index, regex("[0-9]+")))
 		{
