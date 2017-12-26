@@ -1,0 +1,121 @@
+VAR
+    a b c d
+BEGIN
+    a := 7;
+    b := 4;
+    d := b;
+    c := b - 3;
+
+    IF 2 > 1 THEN
+    WRITE 1;
+    ENDIF
+    IF a > b THEN
+    WRITE 2;
+    ENDIF
+    IF d > b THEN
+    WRITE 999;
+    ENDIF
+    IF b > a THEN
+    WRITE 998;
+    ENDIF
+    IF 1 > 2 THEN
+    WRITE 997;
+    ENDIF
+    IF 1 > 1 THEN
+    WRITE 996;
+    ENDIF
+
+    IF 1 < 2 THEN
+    WRITE 3;
+    ENDIF
+    IF b < a THEN
+    WRITE 4;
+    ENDIF
+    IF d < b THEN
+    WRITE 995;
+    ENDIF
+    IF a < b THEN
+    WRITE 994;
+    ENDIF
+    IF 2 < 1 THEN
+    WRITE 993;
+    ENDIF
+    IF 1 < 1 THEN
+    WRITE 992;
+    ENDIF
+
+    IF 1 <= 2 THEN
+    WRITE 5;
+    ENDIF
+    IF b <= a THEN
+    WRITE 6;
+    ENDIF
+    IF d <= b THEN
+    WRITE 7;
+    ENDIF
+    IF a <= b THEN
+    WRITE 991;
+    ENDIF
+    IF 2 <= 1 THEN
+    WRITE 990;
+    ENDIF
+    IF 1 <= 1 THEN
+    WRITE 8;
+    ENDIF
+
+    IF 2 >= 1 THEN
+    WRITE 9;
+    ENDIF
+    IF a >= b THEN
+    WRITE 10;
+    ENDIF
+    IF d >= b THEN
+    WRITE 11;
+    ENDIF
+    IF b >= a THEN
+    WRITE 989;
+    ENDIF
+    IF 1 >= 2 THEN
+    WRITE 988;
+    ENDIF
+    IF 1 >= 1 THEN
+    WRITE 12;
+    ENDIF
+
+    IF 1 = 1 THEN
+    WRITE 13;
+    ENDIF
+    IF d = b THEN
+    WRITE 14;
+    ENDIF
+    IF b = d THEN
+    WRITE 15;
+    ENDIF
+    IF 7 = a THEN
+    WRITE 16;
+    ENDIF
+    IF a = 7 THEN
+    WRITE 17;
+    ENDIF
+    IF 16 = 16 THEN
+    WRITE 18;
+    ENDIF
+    IF a = b THEN
+    WRITE 987;
+    ENDIF
+    IF b = a THEN
+    WRITE 986;
+    ENDIF
+    IF 2 = 1 THEN
+    WRITE 985;
+    ENDIF
+    IF a = 1 THEN
+    WRITE 984;
+    ENDIF
+    IF 1 = a THEN
+    WRITE 983;
+    ENDIF
+
+
+    WRITE 0;
+END

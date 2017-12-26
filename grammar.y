@@ -427,7 +427,7 @@ innerIf				: ELSE {
 								asmInstrunctions.push_back(new AsmInstruction("ZERO"));
 								jzeroLinePointerStack.push(asmInstrunctions.size());
 								asmInstrunctions.push_back(new AsmInstruction("JZERO", 0));
-								asmInstrunctions[jzero]->arg = asmInstrunctions.size()+1;
+								asmInstrunctions[jzero]->arg = asmInstrunctions.size();
 							} commands ENDIF {
 								int jzero = jzeroLinePointerStack.top();
 								jzeroLinePointerStack.pop();

@@ -1,0 +1,14 @@
+VAR
+    tab[10] b
+BEGIN
+  READ tab[1];
+  b := 9;
+  tab[2] := b;
+  tab[1] := 4;
+  WRITE tab[1];
+  WRITE tab[0];
+  WRITE tab[2];
+
+
+
+END

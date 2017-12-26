@@ -1,0 +1,32 @@
+VAR
+    a b c d
+BEGIN
+    IF 1 <= 1 THEN
+      WRITE 1;
+      IF 1 <= 1 THEN
+        WRITE 2;
+        IF 2 <= 1 THEN
+          IF 1 <= 1 THEN
+            WRITE 994;
+          ENDIF
+          WRITE 997;
+          IF 1 <= 1 THEN
+            WRITE 995;
+          ENDIF
+        ENDIF
+        IF 1 <= 1 THEN
+          WRITE 3;
+          IF 2 <= 1 THEN
+            WRITE 996;
+          ENDIF
+        ENDIF
+      ENDIF
+      IF 2 <= 1 THEN
+        WRITE 999;
+        IF 1 <= 1 THEN
+          WRITE 998;
+        ENDIF
+      ENDIF
+    ENDIF
+    WRITE 0;
+END

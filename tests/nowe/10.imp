@@ -1,0 +1,26 @@
+VAR
+    a b tab[10] k t[12]
+BEGIN
+  READ tab[1];
+  WRITE tab[1];
+  a := tab[1];
+  tab[1] := a;
+  WRITE tab[1];
+  b := 1;
+  tab[2] := b;
+  WRITE tab[2];
+  tab[3] := 2;
+  WRITE tab[3];
+
+  READ tab[0];
+  b := tab[0];
+  WRITE b;
+
+  READ tab[4];
+  WRITE tab[4];
+
+  k := 44;
+  tab[12] := 3;
+  WRITE tab[12];
+  WRITE k;
+END
