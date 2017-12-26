@@ -3,6 +3,12 @@ VAR
   a b c d e
 BEGIN
   a := 3 * 5;
+  WRITE a;
+  a := 15 * 2;
+  WRITE a;
+  a := 15;
   a := a * 2;
   WRITE a;
+  b := a / 17;
+  WRITE b;
 END

@@ -17,6 +17,7 @@ class Divider
 	public:
     static int prepare(int, int);
     static int prepare(int, string);
+    static int prepare(string, int);
     static int prepare(string, string);
 		static void doTheJob();
 };
@@ -46,6 +47,26 @@ int Divider::prepare(int a, string name)
 	  asmInstrunctions.push_back(new AsmInstruction("STORE", 9));
 	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second->cell));
 		asmInstrunctions.push_back(new AsmInstruction("STORE", 10));
+		return 0;
+	}
+}
+
+int Divider::prepare(string name, int a)
+{
+	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
+	if(it == memoryMap.end())
+	{
+		undefinedVariableError(name);
+		return 1;
+	}
+	else
+	{
+		if(checkInitialization(name))
+			return 1;
+	  constructValueToRegister(a);
+		asmInstrunctions.push_back(new AsmInstruction("STORE", 10));
+	  asmInstrunctions.push_back(new AsmInstruction("LOAD", it->second->cell));
+	  asmInstrunctions.push_back(new AsmInstruction("STORE", 9));
 		return 0;
 	}
 }

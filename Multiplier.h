@@ -82,6 +82,10 @@ int Multiplier::prepare(string name1, string name2)
 
 void Multiplier::doTheJob()
 {
+	asmInstrunctions.push_back(new AsmInstruction("LOAD", 11));
+	asmInstrunctions.push_back(new AsmInstruction("ZERO"));
+	asmInstrunctions.push_back(new AsmInstruction("STORE", 11));
+	asmInstrunctions.push_back(new AsmInstruction("LOAD", 10));
 	asmInstrunctions.push_back(new AsmInstruction("JZERO", asmInstrunctions.size()+15));
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 9));
 	asmInstrunctions.push_back(new AsmInstruction("INC"));

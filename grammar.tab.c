@@ -2703,7 +2703,7 @@ int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, 
 		}
 		else if(!arg1Num && arg2Num)
 		{
-			if(Divider::prepare(atoi(arg2.c_str()), arg1))
+			if(Divider::prepare(arg1,atoi(arg2.c_str())))
 				return 1;
 		}
 		else if(arg1Num && !arg2Num)

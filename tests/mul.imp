@@ -12,11 +12,13 @@ BEGIN
   ELSE
     WRITE 999;
   ENDIF
+  WRITE 1111;
 
-  WRITE a;
+
   a := a * 2;
-  WRITE a;
   b := a / 17;
+  WRITE b;
+  WRITE e;
 
   IF a < b THEN
     WRITE 998;
