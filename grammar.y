@@ -658,7 +658,50 @@ condition			:value T_EQ value {
 								asmInstrunctions.push_back(new AsmInstruction("SUB", 6));
 							}
              	| value T_NEQ value {
-
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_3,ARRAY_TEMP_VAR_1,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2, $1->name,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation($3->name, ARRAY_TEMP_VAR_2,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($1->name,$3->name,"-",0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
+									if(determineAndExecuteExpressionOperation($3->name,$1->name,"-", 0))
+										return 1;
+									asmInstrunctions.push_back(new AsmInstruction("STORE", 6));
+								}
+								asmInstrunctions.push_back(new AsmInstruction("ZERO"));
+								asmInstrunctions.push_back(new AsmInstruction("ADD", 5));
+								asmInstrunctions.push_back(new AsmInstruction("ADD", 6));
 							}
              	| value T_RGT value {
 								if($1->isArray == true && $3->isArray == true)

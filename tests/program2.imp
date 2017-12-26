@@ -6,26 +6,11 @@ BEGIN
     m := dzielnik * dzielnik;
     WHILE n >= m DO
         potega := 0;
-        WRITE 11111;
         reszta := n % dzielnik;
-        WRITE n;
-        WRITE dzielnik;
-        WRITE reszta;
-        WRITE 22222;
         WHILE reszta = 0 DO
-            WRITE 11112;
-            WRITE dzielnik;
-            WRITE n;
-            WRITE reszta;
-            WRITE potega;
             n := n / dzielnik;
             potega := potega + 1;
             reszta := n % dzielnik;
-            WRITE 333;
-            WRITE n;
-            WRITE reszta;
-            WRITE potega;
-            WRITE 22223;
         ENDWHILE
         IF potega > 0 THEN
             WRITE dzielnik;
@@ -35,7 +20,7 @@ BEGIN
             m := dzielnik * dzielnik;
         ENDIF
     ENDWHILE
-    IF n > 1 THEN
+    IF n <> 1 THEN
         WRITE n;
         WRITE 1;
     ENDIF
