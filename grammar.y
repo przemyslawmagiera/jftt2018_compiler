@@ -543,8 +543,73 @@ expression		:	value {$$ = $1;}
 								newValue->isResult = true;
 								$$ = newValue;
 							}
-             	| value T_DIV value {}
-             	| value T_MOD value {}
+             	| value T_DIV value {
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"/",0))
+										return 1;
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"/",0))
+										return 1;
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"/",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($1->name,$3->name,"/",0))
+										return 1;
+								}
+								Value* newValue = new Value;
+								newValue->isArray = false;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = true;
+								$$ = newValue;
+							}
+             	| value T_MOD value {
+								if($1->isArray == true && $3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"/",0))
+										return 1;
+								}
+								else if($3->isArray == true)
+								{
+									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"/",0))
+										return 1;
+								}
+								else if($1->isArray == true)
+								{
+									//puts("ok");
+									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"/",0))
+										return 1;
+								}
+								else
+								{
+									if(determineAndExecuteExpressionOperation($1->name,$3->name,"/",0))
+										return 1;
+								}
+								asmInstrunctions.push_back(new AsmInstruction("LOAD", 9));
+								Value* newValue = new Value;
+								newValue->isArray = false;
+								newValue->isVariable = false;
+								newValue->isNumber = false;
+								newValue->isResult = true;
+								$$ = newValue;
+							}
 
 condition			:value T_EQ value {
 								if($1->isArray == true && $3->isArray == true)
@@ -968,6 +1033,30 @@ int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, 
 		}
 		Multiplier::doTheJob();
 	}
+	else if(oper == "/")
+	{
+		if(arg1Num && arg2Num)
+		{
+			if(Divider::prepare(atoi(arg1.c_str()), atoi(arg2.c_str())))
+				return 1;
+		}
+		else if(!arg1Num && arg2Num)
+		{
+			if(Divider::prepare(atoi(arg2.c_str()), arg1))
+				return 1;
+		}
+		else if(arg1Num && !arg2Num)
+		{
+			if(Divider::prepare(atoi(arg1.c_str()), arg2))
+				return 1;
+		}
+		else if(!arg1Num && !arg2Num)
+		{
+			if(Divider::prepare(arg1,arg2))
+				return 1;
+		}
+		Divider::doTheJob();
+	}
 	return 0;
 }
 
@@ -1172,7 +1261,7 @@ void yyerror (char const *s)
 
 int main (void)
 {
-	memory_pointer = 12;
+	memory_pointer = 14;
 
 	memoryMap[ARRAY_TEMP_VAR_1] = new MemoryItem(ARRAY_TEMP_VAR_1, 1, ARRAY_BUFFER_STORING_PLACE_1, 1);
 	memoryMap[ARRAY_TEMP_VAR_2] = new MemoryItem(ARRAY_TEMP_VAR_2, 1, ARRAY_BUFFER_STORING_PLACE_2, 1);

@@ -1,6 +1,7 @@
 VAR
-  a b
+  a b c d e
 BEGIN
-  a := 7*8;
+  a := 5 * 3;
   WRITE a;
+
 END
