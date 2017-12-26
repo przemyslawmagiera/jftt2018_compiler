@@ -12,7 +12,6 @@
 	#include "Substractor.h"
 	#include "Multiplier.h"
 	#include "Divider.h"
-	#include "Identifier.h"
 	#include <fstream>
 	#include <bitset>
 	#include <regex>
@@ -31,7 +30,7 @@
 	int determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper,int gte);
 	int copyValueFromAnotherIdentifier(std::string from, std::string to);
 	int assignValueToIdentifier(std::string name, int value);
-	int constructValueToRegister(int value);
+	int constructValueToRegister(long long value);
 	void undefinedVariableError(std::string varName);
 	void typeMismatchError(std::string varName);
 	int storeIdentifier(std::string name);
@@ -1128,7 +1127,7 @@ int writeIdentifier(string name)
 	}
 }
 
-string decToBin(int number)
+string decToBin(long long number)
 {
     string result = "";
     do
@@ -1145,12 +1144,12 @@ string decToBin(int number)
     return result;
 }
 
-int constructValueToRegister(int value)
+int constructValueToRegister(long long value)
 {
 	string valueBin = decToBin(value);
 	asmInstrunctions.push_back(new AsmInstruction("ZERO"));
 	//printf("DEBUG: %d is binary: %s\n",value, valueBin.c_str());
-	for(int i=0; i<valueBin.length(); i++)
+	for(long long i=0; i<valueBin.length(); i++)
 	{
 		if(valueBin[i] == '0' && i!=0)
 			asmInstrunctions.push_back(new AsmInstruction("SHL"));
@@ -1286,16 +1285,6 @@ void uninitializedVariableError(string varName)
 	free(error);
 }
 
-void numberTooBigError(string varName)
-{
-	char* error =(char*) malloc(100);
-	error = strcpy(error, "Cannot assign value to variable '");
-	error = strcat(error,varName.c_str());
-	error = strcat(error,"' - value too big.");
-	yyerror(error);
-	free(error);
-}
-
 void yyerror (char const *s)
 {
 	printf("Error at line:%d near expression '%s', detail : %s \n", yylineno, yytext, s);
@@ -1313,6 +1302,8 @@ int main (void)
 	initializedVars.push_back(ARRAY_TEMP_VAR_2);
 	initializedVars.push_back(ARRAY_TEMP_VAR_3);
 
+	int i = 2000000000;
+	cout << i << "ddd " << i*i;
 	if(yyparse() == 0)
 		printf("Process returned 0, no errors.\n");
 	else

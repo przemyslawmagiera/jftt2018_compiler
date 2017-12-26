@@ -5,7 +5,7 @@
 
 
 using namespace std;
-extern int constructValueToRegister(int value);
+extern int constructValueToRegister(long long value);
 extern void	undefinedVariableError(string varName);
 extern int	checkInitialization(string varName);
 extern map<string, MemoryItem*> memoryMap;
@@ -15,15 +15,15 @@ extern vector<AsmInstruction*> asmInstrunctions;
 class Adder
 {
 	public:
-    static int add(int, int);
-    static int add(int, string);
+    static int add(long long, long long);
+    static int add(long long, string);
     static int add(string, string);
 };
 
 /*
 	0 is temp cell in memory
 */
-int Adder::add(int a, int b)
+int Adder::add(long long a, long long b)
 {
 	//puts("chuje");
   constructValueToRegister(a);
@@ -33,7 +33,7 @@ int Adder::add(int a, int b)
 	return 0;
 }
 
-int Adder::add(int a, string name)
+int Adder::add(long long a, string name)
 {
 	map<string, MemoryItem*>::iterator it = memoryMap.find(name);
 	if(it == memoryMap.end())

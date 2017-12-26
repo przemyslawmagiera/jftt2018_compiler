@@ -5,7 +5,7 @@
 
 
 using namespace std;
-extern int constructValueToRegister(int value);
+extern int constructValueToRegister(long long value);
 extern void	undefinedVariableError(string varName);
 extern int	checkInitialization(string varName);
 extern map<string, MemoryItem*> memoryMap;
