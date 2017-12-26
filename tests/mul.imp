@@ -1,7 +1,27 @@
 VAR
   a b c d e
 BEGIN
-  a := 5 * 3;
-  WRITE a;
+  a := 3 * 5;
+  c := 28;
+  d := 2;
+  b := c / d;
 
+  IF a > b THEN
+    e := a - b;
+    WRITE e;
+  ELSE
+    WRITE 999;
+  ENDIF
+
+  WRITE a;
+  a := a * 2;
+  WRITE a;
+  b := a / 17;
+
+  IF a < b THEN
+    WRITE 998;
+  ELSE
+    e := b + e;
+    WRITE e;
+  ENDIF
 END
