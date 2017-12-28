@@ -29,17 +29,16 @@
 	int loadTableElementToAccumulator(std::string name, std::string index);
 	int determineAndExecuteExpressionOperation(std::string arg1, std::string arg2, std::string oper,int gte);
 	int copyValueFromAnotherIdentifier(std::string from, std::string to);
-	int assignValueToIdentifier(std::string name, int value);
+	int assignValueToIdentifier(std::string name, long long value);
 	int constructValueToRegister(long long value);
 	void undefinedVariableError(std::string varName);
 	void typeMismatchError(std::string varName);
 	int storeIdentifier(std::string name);
-	void numberTooBigError(std::string varName);
 	void printAsmInstructions();
 	int readToIdentifier(std::string name);
 	int initializeIdentifier(std::string name, int tab, long long size);
 	void printAsmInstructions();
-	int writeNumber(int number);
+	int writeNumber(long long number);
 	int writeIdentifier(std::string name);
 	void uninitializedVariableError(std::string varName);
 	int loadFromMemory(std::string name);
@@ -147,7 +146,7 @@ command	      : identifier T_ASG expression T_EL {
 										initializedVars.push_back($1->name);
 										if($3->isNumber)
 										{
-											if(assignValueToIdentifier($1->name, stoi($3->num)))
+											if(assignValueToIdentifier($1->name, stoll($3->num)))
 												return 1;
 										}
 										else if($3->isResult)
@@ -179,7 +178,7 @@ command	      : identifier T_ASG expression T_EL {
 										if($3->isNumber)
 										{
 											//puts("chuuiiichuj1");
-											constructValueToRegister(stoi($3->num));
+											constructValueToRegister(stoll($3->num));
 											if(storeAccumulatorInArray($1->name, $1->index))
 												return 1;
 											//puts("chuuujjj2");
@@ -248,7 +247,7 @@ command	      : identifier T_ASG expression T_EL {
 								}
 								else if($4->isNumber)
 								{
-									constructValueToRegister(stoi($4->num));
+									constructValueToRegister(stoll($4->num));
 								}
 								int iterAddress = findVariableInMemory($2);
 								asmInstrunctions.push_back(new AsmInstruction("STORE", iterAddress));
@@ -271,7 +270,7 @@ command	      : identifier T_ASG expression T_EL {
 								else if($6->isNumber)
 								{
 									//puts("chhhuuujjj");
-									constructValueToRegister(stoi($6->num));
+									constructValueToRegister(stoll($6->num));
 								}
 								int p = findVariableInMemory("C"+for_var_counter);
 								asmInstrunctions.push_back(new AsmInstruction("STORE", p));
@@ -326,7 +325,7 @@ command	      : identifier T_ASG expression T_EL {
 								}
 								else if($4->isNumber)
 								{
-									constructValueToRegister(stoi($4->num));
+									constructValueToRegister(stoll($4->num));
 								}
 								int iterAddress = findVariableInMemory($2);
 								asmInstrunctions.push_back(new AsmInstruction("STORE", iterAddress));
@@ -349,7 +348,7 @@ command	      : identifier T_ASG expression T_EL {
 								else if($6->isNumber)
 								{
 									//puts("chhhuuujjj");
-									constructValueToRegister(stoi($6->num));
+									constructValueToRegister(stoll($6->num));
 								}
 								int p = findVariableInMemory("C"+for_var_counter);
 								asmInstrunctions.push_back(new AsmInstruction("STORE", p));
@@ -402,7 +401,7 @@ command	      : identifier T_ASG expression T_EL {
              	| WRITE value T_EL {
 								if($2->isNumber)
 								{
-									if(writeNumber(stoi($2->num)))
+									if(writeNumber(stoll($2->num)))
 										return 1;
 								}
 								else if($2->isVariable)
@@ -907,7 +906,7 @@ int loadTableElementToAccumulator(string name, string index)
 	{
 		if(regex_match(index, regex("[0-9]+")))
 		{
-			constructValueToRegister(stoi(index));
+			constructValueToRegister(stoll(index));
 		}
 		else
 		{
@@ -976,17 +975,10 @@ int storeIdentifier(string name)
 	}
 }
 
-int assignValueToIdentifier(string name, int value)
+int assignValueToIdentifier(string name, long long value)
 {
-	if(constructValueToRegister(value))
-	{
-		numberTooBigError(name);
-		return 1;
-	}
-	else
-	{
-		return storeIdentifier(name);
-	}
+	constructValueToRegister(value);
+	return storeIdentifier(name);
 }
 //gte sluzy do tego zeby zrobic trik ze zwiekszeniem b przy porownaniu
 int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, int gte)
@@ -1102,7 +1094,7 @@ int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, 
 	return 0;
 }
 
-int writeNumber(int number)
+int writeNumber(long long number)
 {
 	constructValueToRegister(number);
 	asmInstrunctions.push_back(new AsmInstruction("PUT"));
@@ -1209,7 +1201,7 @@ int storeAccumulatorInArray(string name, string index)
 	{
 		if(regex_match(index, regex("[0-9]+")))
 		{
-			constructValueToRegister(stoi(index));
+			constructValueToRegister(stoll(index));
 		}
 		else
 		{
@@ -1302,8 +1294,6 @@ int main (void)
 	initializedVars.push_back(ARRAY_TEMP_VAR_2);
 	initializedVars.push_back(ARRAY_TEMP_VAR_3);
 
-	int i = 2000000000;
-	cout << i << "ddd " << i*i;
 	if(yyparse() == 0)
 		printf("Process returned 0, no errors.\n");
 	else
