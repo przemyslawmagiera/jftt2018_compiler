@@ -1,0 +1,7 @@
+VAR
+    f[101] s[101] i[101] n k l j
+BEGIN
+
+    k:=1*2;
+    WRITE k;
+END
