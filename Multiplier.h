@@ -85,9 +85,9 @@ void Multiplier::doTheJob()
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 11));
 	asmInstrunctions.push_back(new AsmInstruction("ZERO"));
 	asmInstrunctions.push_back(new AsmInstruction("STORE", 11));
-	asmInstrunctions.push_back(new AsmInstruction("LOAD", 10));
-	asmInstrunctions.push_back(new AsmInstruction("JZERO", asmInstrunctions.size()+15));
+
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 9));
+	asmInstrunctions.push_back(new AsmInstruction("JZERO", asmInstrunctions.size()+13));
 	asmInstrunctions.push_back(new AsmInstruction("INC"));
 	asmInstrunctions.push_back(new AsmInstruction("JODD", asmInstrunctions.size()+4));
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 11));
@@ -99,9 +99,6 @@ void Multiplier::doTheJob()
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 9));
 	asmInstrunctions.push_back(new AsmInstruction("SHR"));
 	asmInstrunctions.push_back(new AsmInstruction("STORE", 9));
-	asmInstrunctions.push_back(new AsmInstruction("DEC"));
-	asmInstrunctions.push_back(new AsmInstruction("JUMP", asmInstrunctions.size() - 14));
+	asmInstrunctions.push_back(new AsmInstruction("JUMP", asmInstrunctions.size() - 12));
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 11));
-	asmInstrunctions.push_back(new AsmInstruction("ADD", 10));
-
 }
