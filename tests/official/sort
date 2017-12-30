@@ -1,0 +1,12 @@
+
+VAR
+	m a b c
+BEGIN
+  a := 2;
+	FOR i FROM 0 TO m DO
+		WRITE 1;
+	ENDFOR
+	FOR i FROM 0 TO a DO
+		WRITE 1;
+	ENDFOR
+END

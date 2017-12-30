@@ -1,10 +1,6 @@
 VAR
-	n j ta[25] tb[25] tc[25]
 BEGIN
-	n := 25 - 1;
-	tc[0] := n;
-	tc[n] := n - n;
-	FOR i FROM 25 DOWNTO 0 DO
+	FOR i FROM 10 DOWNTO 0 DO
 		WRITE i;
 	ENDFOR
 END

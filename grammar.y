@@ -254,7 +254,7 @@ command	      : identifier T_ASG expression T_EL {
 								initializedVars.push_back($2);
 								//teraz mamy już value1 w zmiennej i, co więcej jest zainicjalizowana
 								//zrobmy jeszcze value2 do zmiennej Cx, gdzie x to counter (zeby nie bylo kolizji)
-								if(initializeIdentifier("C"+for_var_counter,0,1))
+								if(initializeIdentifier("C"+to_string(for_var_counter),0,1))
 									return 1;
 								if($6->isVariable)
 								{
@@ -272,14 +272,14 @@ command	      : identifier T_ASG expression T_EL {
 									//puts("chhhuuujjj");
 									constructValueToRegister(stoll($6->num));
 								}
-								int p = findVariableInMemory("C"+for_var_counter);
+								int p = findVariableInMemory("C"+to_string(for_var_counter));
 								asmInstrunctions.push_back(new AsmInstruction("STORE", p));
-								initializedVars.push_back("C"+for_var_counter);
+								initializedVars.push_back("C"+to_string(for_var_counter));
 								//mamy zastorowane Tx, teraz trzeba zrobić warunek
 
 								whileConditionPointerStack.push(asmInstrunctions.size());
 								//condition right greater equals: i <= val2
-								if(determineAndExecuteExpressionOperation("C"+for_var_counter,$2,"-",1))
+								if(determineAndExecuteExpressionOperation("C"+to_string(for_var_counter),$2,"-",1))
 									return 1;
 
 								whileJumpPointerStack.push(asmInstrunctions.size());
@@ -304,8 +304,11 @@ command	      : identifier T_ASG expression T_EL {
 
 								map<string, MemoryItem*>::iterator it2 = memoryMap.find($2);
   							memoryMap.erase(it2);
-
-								for_var_counter++;
+								map<string, MemoryItem*>::iterator it3=memoryMap.find("C"+to_string(for_var_counter-1));
+							  memoryMap.erase ( it3, memoryMap.end());
+								if(it3 == memoryMap.end())
+									cout<<"ERROR"<<endl;
+								for_var_counter--;
 							}
              	| FOR PID FROM value DOWNTO value DO {
 								//zastoruj iterator
@@ -332,7 +335,7 @@ command	      : identifier T_ASG expression T_EL {
 								initializedVars.push_back($2);
 								//teraz mamy już value1 w zmiennej i, co więcej jest zainicjalizowana
 								//zrobmy jeszcze value2 do zmiennej Cx, gdzie x to counter (zeby nie bylo kolizji)
-								if(initializeIdentifier("C"+for_var_counter,0,1))
+								if(initializeIdentifier("C"+to_string(for_var_counter),0,1))
 									return 1;
 								if($6->isVariable)
 								{
@@ -347,17 +350,26 @@ command	      : identifier T_ASG expression T_EL {
 								}
 								else if($6->isNumber)
 								{
-									//puts("chhhuuujjj");
 									constructValueToRegister(stoll($6->num));
 								}
-								int p = findVariableInMemory("C"+for_var_counter);
+								int p = findVariableInMemory("C"+to_string(for_var_counter));
 								asmInstrunctions.push_back(new AsmInstruction("STORE", p));
-								initializedVars.push_back("C"+for_var_counter);
+								initializedVars.push_back("K"+to_string(for_var_counter));
 								//mamy zastorowane Tx, teraz trzeba zrobić warunek
 
+								//condition right greater equals: i + 1  > val2
+								// k = a-b
+								if(initializeIdentifier("K"+to_string(for_var_counter),0,1))
+								{
+									return 1;
+								}
+								asmInstrunctions.push_back(new AsmInstruction("LOAD", iterAddress));
+								asmInstrunctions.push_back(new AsmInstruction("INC"));
+								asmInstrunctions.push_back(new AsmInstruction("SUB", p));
+								int p1 = findVariableInMemory("K"+to_string(for_var_counter));
+								asmInstrunctions.push_back(new AsmInstruction("STORE", p1));
 								whileConditionPointerStack.push(asmInstrunctions.size());
-								//condition right greater equals: i <= val2
-								if(determineAndExecuteExpressionOperation($2,"C"+for_var_counter,"-",1))
+								if(determineAndExecuteExpressionOperation("K"+to_string(for_var_counter),to_string(0),"-",0))
 									return 1;
 
 								whileJumpPointerStack.push(asmInstrunctions.size());
@@ -365,9 +377,13 @@ command	      : identifier T_ASG expression T_EL {
 								for_var_counter++;
 							} commands ENDFOR {
 								int iterAddress = findVariableInMemory($2);
+								int p1 = findVariableInMemory("K"+to_string(for_var_counter-1));
 								asmInstrunctions.push_back(new AsmInstruction("LOAD", iterAddress));
 								asmInstrunctions.push_back(new AsmInstruction("DEC"));
 								asmInstrunctions.push_back(new AsmInstruction("STORE", iterAddress));
+								asmInstrunctions.push_back(new AsmInstruction("LOAD", p1));
+								asmInstrunctions.push_back(new AsmInstruction("DEC"));
+								asmInstrunctions.push_back(new AsmInstruction("STORE", p1));
 								int whileConditionStart = whileConditionPointerStack.top();
 								whileConditionPointerStack.pop();
 								asmInstrunctions.push_back(new AsmInstruction("ZERO"));
@@ -378,11 +394,15 @@ command	      : identifier T_ASG expression T_EL {
 								//usunac ze zmiennych Tx oraz iterator
 								vector<string>::iterator it1 = find(initializedVars.begin(), initializedVars.end(), $2);
 								initializedVars.erase(it1);
-
 								map<string, MemoryItem*>::iterator it2 = memoryMap.find($2);
-  							memoryMap.erase(it2);
-
-								for_var_counter++;
+								memoryMap.erase(it2);
+								map<string, MemoryItem*>::iterator it3=memoryMap.find("K"+to_string(for_var_counter-1));
+							  memoryMap.erase (it3, memoryMap.end() );
+								map<string, MemoryItem*>::iterator it4=memoryMap.find("C"+to_string(for_var_counter-1));
+							  memoryMap.erase (it4, memoryMap.end());
+								if(it3 == memoryMap.end() || it4 == memoryMap.end())
+									cout<<"ERROR"<<endl;
+								for_var_counter--;
 							}
              	| READ identifier T_EL {
 							//wydrukuj GET i STORE pod komorka pamieci memoryMap.find(identifier)
@@ -983,6 +1003,7 @@ int assignValueToIdentifier(string name, long long value)
 //gte sluzy do tego zeby zrobic trik ze zwiekszeniem b przy porownaniu
 int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, int gte)
 {
+	//cout<<"arg1: "<< arg1 << "arg2: "<< arg2 <<endl;
 	//printf("debug oper: %s \n", oper.c_str());
 	int arg1Num = regex_match(arg1, std::regex("[0-9]+"));
 	int arg2Num = regex_match(arg2, std::regex("[0-9]+"));
@@ -1006,6 +1027,7 @@ int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, 
 	}
 	else if(oper == "-")
 	{
+		//cout<<"kupa"<<endl;
 		if(arg1Num && arg2Num)
 		{
 			if(gte)

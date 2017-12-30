@@ -13,9 +13,9 @@ BEGIN
       WRITE i;
   ENDWHILE
   WHILE j <= t[2] DO
-      i := 2;
-      p := p + i;
-      j := j +1;
+    i := 2;
+    p := p + i;
+    j := j +1;
   ENDWHILE
   IF p = 22 THEN
     WRITE 4;
