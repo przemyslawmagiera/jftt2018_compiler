@@ -304,10 +304,7 @@ command	      : identifier T_ASG expression T_EL {
 
 								map<string, MemoryItem*>::iterator it2 = memoryMap.find($2);
   							memoryMap.erase(it2);
-								map<string, MemoryItem*>::iterator it3=memoryMap.find("C"+to_string(for_var_counter-1));
-							  memoryMap.erase ( it3, memoryMap.end());
-								if(it3 == memoryMap.end())
-									cout<<"ERROR"<<endl;
+							  memoryMap.erase ("C"+to_string(for_var_counter-1));
 								for_var_counter--;
 							}
              	| FOR PID FROM value DOWNTO value DO {
@@ -396,12 +393,8 @@ command	      : identifier T_ASG expression T_EL {
 								initializedVars.erase(it1);
 								map<string, MemoryItem*>::iterator it2 = memoryMap.find($2);
 								memoryMap.erase(it2);
-								map<string, MemoryItem*>::iterator it3=memoryMap.find("K"+to_string(for_var_counter-1));
-							  memoryMap.erase (it3, memoryMap.end() );
-								map<string, MemoryItem*>::iterator it4=memoryMap.find("C"+to_string(for_var_counter-1));
-							  memoryMap.erase (it4, memoryMap.end());
-								if(it3 == memoryMap.end() || it4 == memoryMap.end())
-									cout<<"ERROR"<<endl;
+							  memoryMap.erase ("K"+to_string(for_var_counter-1));
+							  memoryMap.erase ("C"+to_string(for_var_counter-1));
 								for_var_counter--;
 							}
              	| READ identifier T_EL {
