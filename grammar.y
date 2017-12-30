@@ -40,6 +40,7 @@
 	void printAsmInstructions();
 	int writeNumber(long long number);
 	int writeIdentifier(std::string name);
+	void immutableError(std::string varName);
 	void uninitializedVariableError(std::string varName);
 	int loadFromMemory(std::string name);
 	std::map<std::string, MemoryItem*> memoryMap;
@@ -49,6 +50,7 @@
 	std::stack<int> whileJumpPointerStack;
 	std::stack<int> forCounterDeepStack;
 	std::vector<string> initializedVars;
+	std::vector<string> immutableVars;
 	struct Value {
     bool isArray;
     bool isNumber;
@@ -171,6 +173,11 @@ command	      : identifier T_ASG expression T_EL {
 											if(copyValueFromAnotherIdentifier($3->name, $1->name))
 												return 1;
 										}
+										if(find(immutableVars.begin(), immutableVars.end(), $1->name) != immutableVars.end())
+										{
+											immutableError($1->name);
+											return 1;
+										}
 									}
 									else
 									{
@@ -231,6 +238,7 @@ command	      : identifier T_ASG expression T_EL {
 							}
              	| FOR PID FROM value TO value DO {
 								//zastoruj iterator
+								immutableVars.push_back($2);
 								if(initializeIdentifier($2,0,1))
 									return 1;
 								//wczytaj value1 do akumulatora
@@ -301,6 +309,8 @@ command	      : identifier T_ASG expression T_EL {
 								//usunac ze zmiennych Tx oraz iterator
 								vector<string>::iterator it1 = find(initializedVars.begin(), initializedVars.end(), $2);
 								initializedVars.erase(it1);
+								it1 = find(immutableVars.begin(), immutableVars.end(), $2);
+								immutableVars.erase(it1);
 
 								map<string, MemoryItem*>::iterator it2 = memoryMap.find($2);
   							memoryMap.erase(it2);
@@ -309,6 +319,7 @@ command	      : identifier T_ASG expression T_EL {
 							}
              	| FOR PID FROM value DOWNTO value DO {
 								//zastoruj iterator
+								immutableVars.push_back($2);
 								if(initializeIdentifier($2,0,1))
 									return 1;
 								//wczytaj value1 do akumulatora
@@ -395,6 +406,8 @@ command	      : identifier T_ASG expression T_EL {
 								memoryMap.erase(it2);
 							  memoryMap.erase ("K"+to_string(for_var_counter-1));
 							  memoryMap.erase ("C"+to_string(for_var_counter-1));
+								it1 = find(immutableVars.begin(), immutableVars.end(), $2);
+								immutableVars.erase(it1);
 								for_var_counter--;
 							}
              	| READ identifier T_EL {
@@ -1261,6 +1274,16 @@ void printAsmInstructions()
 }
 
 /*******************ERROR HANDLING*********************************/
+
+void immutableError(string varName)
+{
+	char* error =(char*) malloc(100);
+	error = strcpy(error, "Attempt to edit immutable variable '");
+	error = strcat(error,varName.c_str());
+	error = strcat(error,"' .");
+	yyerror(error);
+	free(error);
+}
 
 void typeMismatchError(string varName)
 {
