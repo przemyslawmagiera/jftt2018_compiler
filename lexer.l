@@ -7,12 +7,16 @@
 extern "C" int yylex();
 int yydebug;
 %}
-
+%x comment
 WHITESPACE [ \t]
 VARIABLE [_a-z]+
 VALUE [0-9]+
 
 %%
+"(" { BEGIN(comment); }
+<comment>")" { BEGIN(INITIAL); }
+<comment>. {}
+<comment>"\n" {}
 {WHITESPACE} {}
 "\n" {//printf("\n");
 }
