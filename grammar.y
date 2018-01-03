@@ -1035,7 +1035,7 @@ int storeIdentifier(string name)
 		undefinedVariableError(name);
 		return 1;
 	}
-	else if(it->second->array == 0)
+else if(it->second->array == false)
 	{
 		int placeInMemory = it->second->cell;
 		AsmInstruction* a = new AsmInstruction("STORE", placeInMemory);
@@ -1044,7 +1044,8 @@ int storeIdentifier(string name)
 	}
 	else
 	{
-		//tablica
+		typeMismatchError(name);
+		return 1;
 	}
 }
 
@@ -1271,7 +1272,7 @@ int storeAccumulatorInArray(string name, string index)
 		undefinedVariableError(name);
 		return 1;
 	}
-	else if(it->second->array == 1)
+else if(it->second->array == true)
 	{
 		if(regex_match(index, regex("[0-9]+")))
 		{

@@ -2,6 +2,5 @@
 VAR
   a b[10]
 BEGIN
-  b := 1;
   a := b;
 END
