@@ -1,0 +1,11 @@
+VAR
+    a b c d e f g tab[3] tablica[10]
+BEGIN
+    a := 2;
+    f := 5;
+    d := 10;
+    tab[0] := 3;
+    tab[a] := 10;
+
+    e := iza[6] + bela[1];
+END

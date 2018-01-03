@@ -161,7 +161,8 @@ command	      : identifier T_ASG expression T_EL {
 										}
 										else if($3->isArray)
 										{
-											loadTableElementToAccumulator($3->name, $3->index);
+											if(loadTableElementToAccumulator($3->name, $3->index))
+												return 1;
 											int place = findVariableInMemory($1->name);
 											if(place == -1)
 												return 1;
@@ -251,7 +252,8 @@ command	      : identifier T_ASG expression T_EL {
 								}
 								else if($4->isArray)
 								{
-									loadTableElementToAccumulator($4->name, $4->index);
+									if(loadTableElementToAccumulator($4->name, $4->index))
+										return 1;
 								}
 								else if($4->isNumber)
 								{
@@ -273,7 +275,8 @@ command	      : identifier T_ASG expression T_EL {
 								}
 								else if($6->isArray)
 								{
-									loadTableElementToAccumulator($6->name, $6->index);
+									if(loadTableElementToAccumulator($6->name, $6->index))
+										return 1;
 								}
 								else if($6->isNumber)
 								{
@@ -332,7 +335,8 @@ command	      : identifier T_ASG expression T_EL {
 								}
 								else if($4->isArray)
 								{
-									loadTableElementToAccumulator($4->name, $4->index);
+									if(loadTableElementToAccumulator($4->name, $4->index))
+										return 1;
 								}
 								else if($4->isNumber)
 								{
@@ -354,7 +358,8 @@ command	      : identifier T_ASG expression T_EL {
 								}
 								else if($6->isArray)
 								{
-									loadTableElementToAccumulator($6->name, $6->index);
+									if(loadTableElementToAccumulator($6->name, $6->index))
+										return 1;
 								}
 								else if($6->isNumber)
 								{
@@ -471,21 +476,23 @@ expression		:	value {$$ = $1;}
 								//std::cout <<"name: "<< $1->name<<" array: "<< $1->isArray <<endl;
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2) || storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"+",0))
 										return 1;
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"+",0))
 										return 1;
 								}
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"+",0))
 										return 1;
 								}
@@ -504,21 +511,25 @@ expression		:	value {$$ = $1;}
              	| value T_MIN value {
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
 										return 1;
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"-",0))
 										return 1;
 								}
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"-",0))
 										return 1;
 								}
@@ -537,21 +548,25 @@ expression		:	value {$$ = $1;}
              	| value T_MUL value {
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"*",0))
 										return 1;
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"*",0))
 										return 1;
 								}
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"*",0))
 										return 1;
 								}
@@ -570,21 +585,25 @@ expression		:	value {$$ = $1;}
              	| value T_DIV value {
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"/",0))
 										return 1;
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"/",0))
 										return 1;
 								}
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"/",0))
 										return 1;
 								}
@@ -603,21 +622,25 @@ expression		:	value {$$ = $1;}
              	| value T_MOD value {
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"/",0))
 										return 1;
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"/",0))
 										return 1;
 								}
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"/",0))
 										return 1;
 								}
@@ -638,8 +661,10 @@ expression		:	value {$$ = $1;}
 condition			:value T_EQ value {
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
 										return 1;
 									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
@@ -649,7 +674,8 @@ condition			:value T_EQ value {
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"-",0))
 										return 1;
 									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
@@ -660,7 +686,8 @@ condition			:value T_EQ value {
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"-",0))
 										return 1;
 									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
@@ -684,8 +711,10 @@ condition			:value T_EQ value {
              	| value T_NEQ value {
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
 										return 1;
 									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
@@ -695,7 +724,8 @@ condition			:value T_EQ value {
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"-",0))
 										return 1;
 									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
@@ -706,7 +736,8 @@ condition			:value T_EQ value {
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"-",0))
 										return 1;
 									asmInstrunctions.push_back(new AsmInstruction("STORE", 5));
@@ -730,21 +761,25 @@ condition			:value T_EQ value {
              	| value T_RGT value {
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_3,ARRAY_TEMP_VAR_2,"-",0))
 										return 1;
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2, $1->name,"-",0))
 										return 1;
 								}
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($3->name,ARRAY_TEMP_VAR_2,"-",0))
 										return 1;
 								}
@@ -757,21 +792,25 @@ condition			:value T_EQ value {
              	| value T_LGT value {
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",0))
 										return 1;
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"-",0))
 										return 1;
 								}
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"-",0))
 										return 1;
 								}
@@ -784,21 +823,25 @@ condition			:value T_EQ value {
              	| value T_RGE value {
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_3,ARRAY_TEMP_VAR_2,"-",1))
 										return 1;
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2, $1->name,"-",1))
 										return 1;
 								}
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($3->name,ARRAY_TEMP_VAR_2,"-",1))
 										return 1;
 								}
@@ -811,21 +854,25 @@ condition			:value T_EQ value {
              	| value T_LGE value {
 								if($1->isArray == true && $3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 3);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 3))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,ARRAY_TEMP_VAR_3,"-",1))
 										return 1;
 								}
 								else if($3->isArray == true)
 								{
-									storeArrayValueInTemporaryVariable($3->name, $3->index, 2);
+									if(storeArrayValueInTemporaryVariable($3->name, $3->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation($1->name,ARRAY_TEMP_VAR_2,"-",1))
 										return 1;
 								}
 								else if($1->isArray == true)
 								{
 									//puts("ok");
-									storeArrayValueInTemporaryVariable($1->name, $1->index, 2);
+									if(storeArrayValueInTemporaryVariable($1->name, $1->index, 2))
+										return 1;
 									if(determineAndExecuteExpressionOperation(ARRAY_TEMP_VAR_2,$3->name,"-",1))
 										return 1;
 								}
@@ -1033,7 +1080,6 @@ int determineAndExecuteExpressionOperation(string arg1,string arg2,string oper, 
 	}
 	else if(oper == "-")
 	{
-		//cout<<"kupa"<<endl;
 		if(arg1Num && arg2Num)
 		{
 			if(gte)
