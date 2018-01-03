@@ -2,5 +2,5 @@
 VAR
   a b[10]
 BEGIN
-  a := b;
+  a := b[a];
 END

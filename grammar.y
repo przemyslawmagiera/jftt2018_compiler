@@ -950,6 +950,7 @@ int storeArrayValueInTemporaryVariable(string name, string index, int place)
 	{
 		asmInstrunctions.push_back(new AsmInstruction("STORE", ARRAY_BUFFER_STORING_PLACE_3));
 	}
+	return 0;
 }
 
 int findVariableInMemory(string name)
