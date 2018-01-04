@@ -2987,7 +2987,7 @@ int checkInitialization(string name)
 void printAsmInstructions()
 {
 	ofstream outputFile;
-	outputFile.open("output1.mr");
+	outputFile.open("output.mr");
 	vector<AsmInstruction*>::iterator it;
 	for (auto const& i : asmInstrunctions) {
     outputFile << i->toString() << endl;
