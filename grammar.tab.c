@@ -1418,7 +1418,6 @@ yyreduce:
 									//printf("debug exp: %s \n", $3);
 									if((yyvsp[-3].value)->isVariable == true)
 									{
-										initializedVars.push_back((yyvsp[-3].value)->name);
 										if((yyvsp[-1].value)->isNumber)
 										{
 											if(assignValueToIdentifier((yyvsp[-3].value)->name, stoll((yyvsp[-1].value)->num)))
@@ -1452,6 +1451,7 @@ yyreduce:
 											immutableError((yyvsp[-3].value)->name);
 											return 1;
 										}
+										initializedVars.push_back((yyvsp[-3].value)->name);
 									}
 									else
 									{
@@ -2646,6 +2646,19 @@ int loadTableElementToAccumulator(string name, string index)
 		else
 		{
 			//załaduj variable do akumulatora
+			map<string, MemoryItem*>::iterator it1 = memoryMap.find(index);
+			if(it1 == memoryMap.end())
+			{
+					undefinedVariableError(index);
+					return 1;
+			}
+			if(it1->second->array == 1)
+			{
+					typeMismatchError(index);
+					return 1;
+			}
+			if(checkInitialization(index))
+				return 1;
 			int place = findVariableInMemory(index);
 			if(place == -1)
 				return 1;

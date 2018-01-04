@@ -1,6 +1,6 @@
 ( Błąd w linii 5: niewłaściwe użycie zmiennej tablicowej b )
 VAR
-  a b[10]
+  a b[10] c
 BEGIN
-  a := b[a];
+  a :=b[b];
 END

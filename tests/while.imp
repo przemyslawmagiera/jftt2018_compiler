@@ -1,14 +1,15 @@
 VAR
-  i j n p t[5] k r q g l bug
+  i j n p t[5] k r q g l bug u
 BEGIN
+  u := 1;
   l := 0;
   n := 10;
   p := 0;
   i := 0;
   j := 0;
   t[1] := 3;
-  t[2] :=t[t];
-  WHILE i < t[t] DO
+  t[2] :=10;
+  WHILE i < t[u] DO
       i := i + 1;
       WRITE i;
   ENDWHILE

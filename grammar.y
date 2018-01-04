@@ -145,7 +145,6 @@ command	      : identifier T_ASG expression T_EL {
 									//printf("debug exp: %s \n", $3);
 									if($1->isVariable == true)
 									{
-										initializedVars.push_back($1->name);
 										if($3->isNumber)
 										{
 											if(assignValueToIdentifier($1->name, stoll($3->num)))
@@ -179,6 +178,7 @@ command	      : identifier T_ASG expression T_EL {
 											immutableError($1->name);
 											return 1;
 										}
+										initializedVars.push_back($1->name);
 									}
 									else
 									{
@@ -985,6 +985,19 @@ int loadTableElementToAccumulator(string name, string index)
 		else
 		{
 			//załaduj variable do akumulatora
+			map<string, MemoryItem*>::iterator it1 = memoryMap.find(index);
+			if(it1 == memoryMap.end())
+			{
+					undefinedVariableError(index);
+					return 1;
+			}
+			if(it1->second->array == 1)
+			{
+					typeMismatchError(index);
+					return 1;
+			}
+			if(checkInitialization(index))
+				return 1;
 			int place = findVariableInMemory(index);
 			if(place == -1)
 				return 1;
@@ -1313,7 +1326,7 @@ int checkInitialization(string name)
 void printAsmInstructions()
 {
 	ofstream outputFile;
-	outputFile.open("output1.mr");
+	outputFile.open("output.mr");
 	vector<AsmInstruction*>::iterator it;
 	for (auto const& i : asmInstrunctions) {
     outputFile << i->toString() << endl;
