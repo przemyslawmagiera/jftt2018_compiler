@@ -100,19 +100,27 @@ int Divider::prepare(string name1, string name2)
 
 void Divider::doTheJob()
 {
+	//check if b is not zero
+	asmInstrunctions.push_back(new AsmInstruction("LOAD", 10));
+	asmInstrunctions.push_back(new AsmInstruction("JZERO",asmInstrunctions.size()+2));
+	asmInstrunctions.push_back(new AsmInstruction("JUMP",asmInstrunctions.size()+4));
+	asmInstrunctions.push_back(new AsmInstruction("STORE",11));
+	asmInstrunctions.push_back(new AsmInstruction("STORE",9));
+	asmInstrunctions.push_back(new AsmInstruction("JUMP",asmInstrunctions.size()+47));
+
 	asmInstrunctions.push_back(new AsmInstruction("ZERO"));
 	asmInstrunctions.push_back(new AsmInstruction("INC"));
 	asmInstrunctions.push_back(new AsmInstruction("STORE",13));
 	asmInstrunctions.push_back(new AsmInstruction("ZERO"));
 	asmInstrunctions.push_back(new AsmInstruction("STORE",11));
-	asmInstrunctions.push_back(new AsmInstruction("STORE",12));
+	asmInstrunctions.push_back(new AsmInstruction("STORE",12));//6
 
 	int condition = asmInstrunctions.size();
 	//while
 	//condition RGE (9,10)
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 9));
 	asmInstrunctions.push_back(new AsmInstruction("INC"));
-	asmInstrunctions.push_back(new AsmInstruction("SUB", 10));
+	asmInstrunctions.push_back(new AsmInstruction("SUB", 10));//9
 
 	asmInstrunctions.push_back(new AsmInstruction("JZERO", asmInstrunctions.size()+8));
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 12));
@@ -121,12 +129,12 @@ void Divider::doTheJob()
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 10));
 	asmInstrunctions.push_back(new AsmInstruction("SHL"));
 	asmInstrunctions.push_back(new AsmInstruction("STORE", 10));
-	asmInstrunctions.push_back(new AsmInstruction("JUMP", condition));
+	asmInstrunctions.push_back(new AsmInstruction("JUMP", condition));//17
 	//endwhile
 
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 10));
 	asmInstrunctions.push_back(new AsmInstruction("SHR"));
-	asmInstrunctions.push_back(new AsmInstruction("STORE", 10));
+	asmInstrunctions.push_back(new AsmInstruction("STORE", 10));//20
 
 	//for RGE (k,i)
 	int forCondition = asmInstrunctions.size();
@@ -137,7 +145,7 @@ void Divider::doTheJob()
 	//if b <= a
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 9));
 	asmInstrunctions.push_back(new AsmInstruction("INC"));
-	asmInstrunctions.push_back(new AsmInstruction("SUB", 10));
+	asmInstrunctions.push_back(new AsmInstruction("SUB", 10));//27
 
 	asmInstrunctions.push_back(new AsmInstruction("JZERO", asmInstrunctions.size()+9));
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 9));
@@ -150,7 +158,7 @@ void Divider::doTheJob()
 	asmInstrunctions.push_back(new AsmInstruction("JUMP", asmInstrunctions.size()+4));
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 11));
 	asmInstrunctions.push_back(new AsmInstruction("SHL"));
-	asmInstrunctions.push_back(new AsmInstruction("STORE", 11));
+	asmInstrunctions.push_back(new AsmInstruction("STORE", 11));//39
 
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 10));
 	asmInstrunctions.push_back(new AsmInstruction("SHR"));
@@ -158,7 +166,7 @@ void Divider::doTheJob()
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 13));
 	asmInstrunctions.push_back(new AsmInstruction("INC"));
 	asmInstrunctions.push_back(new AsmInstruction("STORE", 13));
-	asmInstrunctions.push_back(new AsmInstruction("JUMP", forCondition));
+	asmInstrunctions.push_back(new AsmInstruction("JUMP", forCondition));//46
 
 	asmInstrunctions.push_back(new AsmInstruction("LOAD", 11));
 }
